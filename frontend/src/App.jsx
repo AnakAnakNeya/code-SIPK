@@ -6,10 +6,14 @@ import { AppLayout } from './components/layout/AppLayout.jsx';
 // Pages
 import LoginPage from './pages/auth/LoginPage.jsx';
 import RegisterWizardPage from './pages/auth/RegisterWizardPage.jsx';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage.jsx';
 import CatalogPage from './pages/catalog/CatalogPage.jsx';
 import DashboardUmkmPage from './pages/umkm/DashboardUmkmPage.jsx';
 import ProfilUsahaPage from './pages/umkm/ProfilUsahaPage.jsx';
+import ProdukSayaPage from './pages/umkm/ProdukSayaPage.jsx';
 import DashboardDinasPage from './pages/dinas/DashboardDinasPage.jsx';
+import KurasiDinasPage from './pages/dinas/KurasiDinasPage.jsx';
+import DirektoriUmkmPage from './pages/dinas/DirektoriUmkmPage.jsx';
 
 function ProtectedRoute({ children, allowedRoles }) {
   const { user, loading } = useAuth();
@@ -53,6 +57,7 @@ export function App() {
       <Route path="/katalog" element={<CatalogPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterWizardPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
       {/* Rute Khusus UMKM */}
       <Route
@@ -75,7 +80,7 @@ export function App() {
         path="/umkm/produk"
         element={
           <ProtectedRoute allowedRoles={['umkm']}>
-            <ProfilUsahaPage />
+            <ProdukSayaPage />
           </ProtectedRoute>
         }
       />
@@ -93,7 +98,7 @@ export function App() {
         path="/dinas/kurasi"
         element={
           <ProtectedRoute allowedRoles={['staf', 'kabid']}>
-            <DashboardDinasPage />
+            <KurasiDinasPage />
           </ProtectedRoute>
         }
       />
@@ -101,7 +106,7 @@ export function App() {
         path="/dinas/umkm"
         element={
           <ProtectedRoute allowedRoles={['staf', 'kabid']}>
-            <DashboardDinasPage />
+            <DirektoriUmkmPage />
           </ProtectedRoute>
         }
       />

@@ -38,7 +38,6 @@ const kurasiSubmissionSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Product',
       required: true,
-      index: true,
     },
     businessId: {
       type: mongoose.Schema.Types.ObjectId,
