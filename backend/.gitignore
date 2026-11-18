@@ -1,0 +1,6 @@
+node_modules/
+.env
+uploads/private/*
+uploads/public/*
+!uploads/private/.gitkeep
+!uploads/public/.gitkeep
