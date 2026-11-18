@@ -1,3 +1,6 @@
+// ============================================================================
+// [PBI-04] Model Pengajuan & Riwayat Verifikasi Kurasi Mutu (KurasiSubmission Schema)
+// ============================================================================
 import mongoose from 'mongoose';
 import { STATUS_KURASI } from '../constants/enums.js';
 

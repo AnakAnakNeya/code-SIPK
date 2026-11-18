@@ -1,3 +1,13 @@
+// ============================================================================
+// [PBI-04] Antrean Kurasi & Stepper 4 Tahap Verifikasi Mutu Dinas (FR-04)
+// PIC: Abdullah
+// Kriteria:
+// - AC-04-03 & AC-04-04: Antrean kurasi staf, filter status, tombol 'Ambil Pengajuan'
+// - AC-04-05 s/d AC-04-09: Stepper 4 tahap (1 Profil, 2 Berkas, 3 Kemasan, 4 Keputusan)
+// - AC-04-10 s/d AC-04-12: Rekomendasi staf (Setuju / Revisi)
+// - AC-04-13 s/d AC-04-16: Keputusan Kabid (Grade A/B, SK-KUR, Lolos ke Katalog)
+// ============================================================================
+
 import React, { useState, useEffect } from 'react';
 import {
   FileCheck,

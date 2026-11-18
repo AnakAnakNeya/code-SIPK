@@ -1,3 +1,6 @@
+// ============================================================================
+// [PBI-03] Model Produk Komoditas Usaha (Product Schema)
+// ============================================================================
 import mongoose from 'mongoose';
 import { GRADE, KATEGORI, STATUS_PRODUK } from '../constants/enums.js';
 import { slugify } from '../utils/slug.js';

@@ -1,3 +1,12 @@
+// ============================================================================
+// [PBI-06] Direktori Binaan 28 Kecamatan & Persetujuan Akun Mandiri (FR-14)
+// PIC: Naila
+// Kriteria:
+// - AC-06-01 & AC-06-02: Tabel direktori UMKM lengkap, pencarian, filter status & kecamatan
+// - AC-06-03: Bar ringkasan sebaran binaan per 28 kecamatan Kabupaten Lebak
+// - AC-06-06 & AC-06-07: Modal pemeriksaan berkas NIB dan tombol "Setujui" / "Tolak" akun
+// ============================================================================
+
 import React, { useState, useEffect } from 'react';
 import {
   Users,

@@ -1,3 +1,9 @@
+// ============================================================================
+// [PBI-01] Halaman Masuk Multi-Identifier (FR-01)
+// PIC: Naila
+// Kriteria: AC-01-08 (Input Email atau 13 Digit NIB, Ingat Saya, Tautan Lupa Sandi & Daftar)
+// ============================================================================
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';

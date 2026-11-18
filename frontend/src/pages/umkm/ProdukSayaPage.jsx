@@ -1,3 +1,12 @@
+// ============================================================================
+// [PBI-03 & PBI-04] Produk Saya (FR-03) & Tombol Ajukan Kurasi (FR-04)
+// PIC: Fariz (PBI-03) & Abdullah (PBI-04)
+// Kriteria:
+// - AC-03-01 s/d AC-03-07: Daftar tabel produk, pembuatan draf, penetapan kapasitas & harga acuan
+// - AC-03-08 & AC-04-01: Tombol "Ajukan Kurasi" membuat nomor KUR-2026-xxx & kunci produk
+// - AC-03-12: Hapus hanya berlaku untuk produk berstatus 'draf'
+// ============================================================================
+
 import React, { useState, useEffect } from 'react';
 import {
   Package,

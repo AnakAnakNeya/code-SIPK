@@ -1,3 +1,6 @@
+// ============================================================================
+// [PBI-01] Model Pengguna & Role-Based Access Control (User Schema)
+// ============================================================================
 import mongoose from 'mongoose';
 import { ROLES, STATUS_AKUN } from '../constants/enums.js';
 

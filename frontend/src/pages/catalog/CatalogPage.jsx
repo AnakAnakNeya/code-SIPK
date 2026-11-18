@@ -1,3 +1,12 @@
+// ============================================================================
+// [PBI-05] Katalog Komoditas Terkurasi & Etalase Publik (FR-05)
+// PIC: Fariz
+// Kriteria:
+// - AC-05-01 & AC-05-02: Dapat dibuka tanpa login, hanya produk 'terkurasi' yang tampil
+// - AC-05-03 s/d AC-05-05: Grid kartu responsif, pencarian teks, filter 28 kecamatan & kategori
+// - AC-05-08 & AC-05-09: Lencana grade resmi, nomor WA hanya untuk pengguna yang login
+// ============================================================================
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {

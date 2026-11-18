@@ -1,3 +1,14 @@
+// ============================================================================
+// [PBI-01] Formulir Wizard Registrasi Mandiri UMKM 3 Langkah (FR-01)
+// PIC: Naila
+// Kriteria:
+// - AC-01-01: Wizard 3 langkah, indikator progres, form state tidak hilang saat Kembali
+// - AC-01-02: Langkah 1 (Data Pemilik: nama KTP, email, noHp, sandi, konfirmasi)
+// - AC-01-03: Langkah 2 (Data Usaha: nama usaha, 28 kecamatan, alamat, WA usaha, 13 digit NIB)
+// - AC-01-04: Langkah 3 (Komoditas & Legalitas: kategori utama, sub-komoditas, pernyataan kebenaran)
+// - AC-01-06: Akun dibuat status menunggu_persetujuan, auto-login, banner aktif
+// ============================================================================
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Check, ArrowLeft, ArrowRight, ShieldCheck, Plus, X } from 'lucide-react';

@@ -1,3 +1,12 @@
+// ============================================================================
+// [PBI-01 & PBI-02] Profil Usaha (FR-01) & Unggah Berkas Legalitas (FR-02)
+// PIC: Naila (PBI-01) & Abdullah (PBI-02)
+// Kriteria:
+// - AC-01-16: UMKM boleh mengubah nama/alamat usaha, NIB terkunci demi integritas OSS-RBA
+// - AC-02-01 s/d AC-02-05: Unggah berkas NIB, SPP-IRT, Halal, Uji Umur Simpan, HKI (maks 2 MB)
+// - AC-02-10: Badge status verifikasi dinas (Valid, Perlu Revisi, Belum Diperiksa)
+// ============================================================================
+
 import React, { useState, useEffect } from 'react';
 import {
   Building2,

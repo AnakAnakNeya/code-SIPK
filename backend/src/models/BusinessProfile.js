@@ -1,3 +1,6 @@
+// ============================================================================
+// [PBI-01] Model Profil Usaha Binaan & NIB 13 Digit OSS-RBA (BusinessProfile Schema)
+// ============================================================================
 import mongoose from 'mongoose';
 import { KATEGORI } from '../constants/enums.js';
 import { KECAMATAN } from '../constants/kecamatan.js';

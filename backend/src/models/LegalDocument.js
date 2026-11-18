@@ -1,3 +1,6 @@
+// ============================================================================
+// [PBI-02] Model Dokumen Izin Usaha Legalitas UMKM (LegalDocument Schema)
+// ============================================================================
 import mongoose from 'mongoose';
 import { JENIS_DOKUMEN, STATUS_DOKUMEN } from '../constants/enums.js';
 
