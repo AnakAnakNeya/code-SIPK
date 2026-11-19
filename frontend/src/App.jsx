@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
-import { AppLayout } from './components/layout/AppLayout.jsx';
+import { AppLayout } from './layouts/AppLayout.jsx';
 
 // Pages
 import LoginPage from './pages/auth/LoginPage.jsx';
@@ -14,6 +14,7 @@ import ProdukSayaPage from './pages/umkm/ProdukSayaPage.jsx';
 import DashboardDinasPage from './pages/dinas/DashboardDinasPage.jsx';
 import KurasiDinasPage from './pages/dinas/KurasiDinasPage.jsx';
 import DirektoriUmkmPage from './pages/dinas/DirektoriUmkmPage.jsx';
+import DashboardMitraPage from './pages/mitra/DashboardMitraPage.jsx';
 
 function ProtectedRoute({ children, allowedRoles }) {
   const { user, loading } = useAuth();
@@ -107,6 +108,16 @@ export function App() {
         element={
           <ProtectedRoute allowedRoles={['staf', 'kabid']}>
             <DirektoriUmkmPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Rute Khusus Mitra */}
+      <Route
+        path="/mitra/dasbor"
+        element={
+          <ProtectedRoute allowedRoles={['mitra']}>
+            <DashboardMitraPage />
           </ProtectedRoute>
         }
       />

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import api from '../../api/client.js';
-import { AuthLayout } from '../../components/layout/AuthLayout.jsx';
+import { AuthLayout } from '../../layouts/AuthLayout.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Alert } from '../../components/ui/Alert.jsx';

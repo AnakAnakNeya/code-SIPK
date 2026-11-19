@@ -1,3 +1,8 @@
+// ============================================================================
+// Layout Halaman Autentikasi SIPK-Lebak (frontend/src/layouts/AuthLayout.jsx)
+// Panel Navy Brand kiri & Panel Formulir kanan (< 300 KB)
+// ============================================================================
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck } from 'lucide-react';
@@ -56,3 +61,4 @@ export function AuthLayout({ children, title, subtitle }) {
     </div>
   );
 }
+export default AuthLayout;
