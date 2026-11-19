@@ -15,6 +15,7 @@ const userSchema = new mongoose.Schema(
     catatanStatus: String, // alasan ditolak/nonaktif
     mustChangePassword: { type: Boolean, default: false },
     mitraId: String, // 'MTR-2026-0089', khusus role mitra
+    instansi: String, // Nama instansi/perusahaan mitra pembeli B2B
     createdVia: { type: String, enum: ['mandiri', 'dinas', 'seed'], default: 'mandiri' },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     resetTokenHash: { type: String, select: false },

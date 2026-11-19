@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
 import { AppLayout } from './layouts/AppLayout.jsx';
 
-// Pages
+// Pages - Sprint 1
 import LoginPage from './pages/auth/LoginPage.jsx';
 import RegisterWizardPage from './pages/auth/RegisterWizardPage.jsx';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage.jsx';
@@ -14,7 +14,20 @@ import ProdukSayaPage from './pages/umkm/ProdukSayaPage.jsx';
 import DashboardDinasPage from './pages/dinas/DashboardDinasPage.jsx';
 import KurasiDinasPage from './pages/dinas/KurasiDinasPage.jsx';
 import DirektoriUmkmPage from './pages/dinas/DirektoriUmkmPage.jsx';
+
+// Pages - Sprint 2
 import DashboardMitraPage from './pages/mitra/DashboardMitraPage.jsx';
+import RfqMitraPage from './pages/mitra/RfqMitraPage.jsx';
+import RfqTerbukaPage from './pages/umkm/RfqTerbukaPage.jsx';
+import RfqDinasPage from './pages/dinas/RfqDinasPage.jsx';
+
+// Pages - Sprint 3
+import ForumPage from './pages/forum/ForumPage.jsx';
+import EventUmkmPage from './pages/umkm/EventUmkmPage.jsx';
+import EventDinasPage from './pages/dinas/EventDinasPage.jsx';
+import SintesaPage from './pages/sintesa/SintesaPage.jsx';
+import AkunAuditPage from './pages/dinas/AkunAuditPage.jsx';
+import EventPublikPage from './pages/publik/EventPublikPage.jsx';
 
 function ProtectedRoute({ children, allowedRoles }) {
   const { user, loading } = useAuth();
@@ -56,9 +69,20 @@ export function App() {
       {/* Rute Publik */}
       <Route path="/" element={<Navigate to="/katalog" replace />} />
       <Route path="/katalog" element={<CatalogPage />} />
+      <Route path="/agenda" element={<EventPublikPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterWizardPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+
+      {/* Rute Bersama (Forum Komunitas - UMKM, Staf, Kabid) */}
+      <Route
+        path="/forum"
+        element={
+          <ProtectedRoute allowedRoles={['umkm', 'staf', 'kabid']}>
+            <ForumPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Rute Khusus UMKM */}
       <Route
@@ -82,6 +106,30 @@ export function App() {
         element={
           <ProtectedRoute allowedRoles={['umkm']}>
             <ProdukSayaPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/umkm/rfq"
+        element={
+          <ProtectedRoute allowedRoles={['umkm']}>
+            <RfqTerbukaPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/umkm/event"
+        element={
+          <ProtectedRoute allowedRoles={['umkm']}>
+            <EventUmkmPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/umkm/sintesa"
+        element={
+          <ProtectedRoute allowedRoles={['umkm']}>
+            <SintesaPage />
           </ProtectedRoute>
         }
       />
@@ -111,6 +159,40 @@ export function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/dinas/rfq"
+        element={
+          <ProtectedRoute allowedRoles={['staf', 'kabid']}>
+            <RfqDinasPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dinas/event"
+        element={
+          <ProtectedRoute allowedRoles={['staf', 'kabid']}>
+            <EventDinasPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dinas/sintesa"
+        element={
+          <ProtectedRoute allowedRoles={['staf', 'kabid']}>
+            <SintesaPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Rute Khusus Kabid Dinas (Manajemen Akun & Log Audit) */}
+      <Route
+        path="/dinas/akun"
+        element={
+          <ProtectedRoute allowedRoles={['kabid']}>
+            <AkunAuditPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Rute Khusus Mitra */}
       <Route
@@ -121,10 +203,19 @@ export function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/mitra/rfq"
+        element={
+          <ProtectedRoute allowedRoles={['mitra']}>
+            <RfqMitraPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* 404 Fallback */}
       <Route path="*" element={<Navigate to="/katalog" replace />} />
     </Routes>
   );
 }
+
 export default App;

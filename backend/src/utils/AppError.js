@@ -1,10 +1,20 @@
 // Error aplikasi dengan kode baku (PRD Sprint 1, Seksi 4.2).
 export class AppError extends Error {
-  constructor(status, code, message, fields) {
-    super(message);
-    this.status = status;
-    this.code = code;
-    this.fields = fields;
+  constructor(arg1, arg2, arg3, arg4) {
+    // Mendukung signature:
+    // 1. (status, code, message, fields)
+    // 2. (message, status, fields)
+    if (typeof arg1 === 'string' && typeof arg2 === 'number') {
+      super(arg1);
+      this.status = arg2;
+      this.code = typeof arg3 === 'string' && arg3 ? arg3 : 'APP_ERROR';
+      this.fields = typeof arg3 === 'object' ? arg3 : arg4;
+    } else {
+      super(arg3 || (typeof arg1 === 'string' ? arg1 : ''));
+      this.status = typeof arg1 === 'number' ? arg1 : 500;
+      this.code = typeof arg2 === 'string' ? arg2 : 'APP_ERROR';
+      this.fields = arg4;
+    }
   }
 
   static validation(message, fields) {
@@ -26,3 +36,5 @@ export class AppError extends Error {
     return new AppError(429, 'RATE_LIMITED', message);
   }
 }
+
+export default AppError;

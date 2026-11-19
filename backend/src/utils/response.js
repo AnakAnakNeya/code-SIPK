@@ -2,6 +2,10 @@ export function ok(res, data = null, message = 'Berhasil', status = 200) {
   return res.status(status).json({ success: true, data, message });
 }
 
+export function sendSuccess(res, status = 200, message = 'Berhasil', data = null) {
+  return res.status(status).json({ success: true, data, message });
+}
+
 export function created(res, data = null, message = 'Berhasil dibuat') {
   return ok(res, data, message, 201);
 }

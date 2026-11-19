@@ -1,4 +1,4 @@
-// Kontrak bersama tim (PRD Sprint 1, Seksi 4.3). Jangan diubah tanpa kabar ke tim.
+// Kontrak bersama tim (PRD Sprint 1 & 2). Jangan diubah tanpa kabar ke tim.
 
 export const ROLES = { UMKM: 'umkm', STAF: 'staf', KABID: 'kabid', MITRA: 'mitra' };
 
@@ -19,3 +19,19 @@ export const STATUS_KURASI = [
   'perlu_revisi', // dikembalikan ke UMKM
   'disetujui', // kabid menyetujui
 ];
+
+// [Sprint 2 / PBI-07 s/d PBI-11]
+export const STATUS_RFQ = [
+  'draf',
+  'menunggu_verifikasi',
+  'ditolak',
+  'terbuka',
+  'proses_verifikasi',
+  'terpenuhi',
+  'kedaluwarsa',
+  'dibatalkan',
+];
+
+export const STATUS_ALOKASI = ['proses_verifikasi', 'terkonfirmasi', 'dibatalkan'];
+
+export const HARGA_ACUAN_SUMBER = ['referensi_dinas', 'rata_rata_produk'];
