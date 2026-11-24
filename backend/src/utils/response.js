@@ -1,4 +1,7 @@
 export function ok(res, data = null, message = 'Berhasil', status = 200) {
+  if (typeof status === 'object' && status !== null) {
+    return res.status(200).json({ success: true, data, message, pagination: status });
+  }
   return res.status(status).json({ success: true, data, message });
 }
 

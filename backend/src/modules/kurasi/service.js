@@ -263,6 +263,7 @@ export async function submitDecision(id, kabidId, { hasil, grade, catatan }, ip)
       at: new Date(),
     };
     sub.status = 'disetujui';
+    sub.aktif = false; // Penanda kurasi selesai agar slot pengajuan di masa mendatang tetap terbuka (AC-04-02)
 
     // Perbarui produk jadi terkurasi
     await Product.findByIdAndUpdate(sub.productId._id, {

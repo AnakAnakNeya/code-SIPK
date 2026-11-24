@@ -1,3 +1,5 @@
+import crypto from 'node:crypto';
+import bcrypt from 'bcryptjs';
 import BusinessProfile from '../../models/BusinessProfile.js';
 import User from '../../models/User.js';
 import LegalDocument from '../../models/LegalDocument.js';
@@ -159,5 +161,114 @@ export async function verifyAccount(businessId, stafId, { keputusan, catatan }, 
   return {
     status: user.status,
     catatanStatus: user.catatanStatus,
+  };
+}
+
+/**
+ * Daftarkan UMKM Manual oleh Staf Dinas (AC-06-09)
+ * Akun langsung aktif (createdVia: 'dinas') dengan kata sandi sementara dan mustChangePassword = true.
+ */
+export async function registerManualByDinas(data, stafId, ip) {
+  const { nama, email, noHp, namaUsaha, kecamatan, kategoriUtama, subKomoditas, nib, alamat, waUsaha } = data;
+
+  if (!nama || !email || !namaUsaha || !kecamatan) {
+    throw AppError.validation('Nama pemilik, email, nama usaha, dan kecamatan wajib diisi');
+  }
+
+  const existingUser = await User.findOne({ email: email.toLowerCase() });
+  if (existingUser) {
+    throw AppError.conflict('Email sudah terdaftar dalam sistem.');
+  }
+
+  const cleanNib = nib ? String(nib).trim() : '';
+  if (cleanNib) {
+    const existingNib = await BusinessProfile.findOne({ nib: cleanNib });
+    if (existingNib) {
+      throw AppError.conflict('Nomor Induk Berusaha (NIB) sudah terdaftar.');
+    }
+  }
+
+  // Buat kata sandi sementara 10 karakter acak
+  const tempPassword = 'Lbk' + crypto.randomBytes(4).toString('hex').slice(0, 6) + '!';
+  const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+  const user = await User.create({
+    nama: nama.trim(),
+    email: email.toLowerCase().trim(),
+    noHp: noHp ? String(noHp).trim() : '',
+    passwordHash: hashedPassword,
+    role: 'umkm',
+    status: 'aktif',
+    createdVia: 'dinas',
+    mustChangePassword: true,
+  });
+
+  const profile = await BusinessProfile.create({
+    userId: user._id,
+    namaUsaha: namaUsaha.trim(),
+    kecamatan,
+    kategoriUtama: kategoriUtama || 'olahan_pangan',
+    subKomoditas: subKomoditas ? subKomoditas.trim() : '',
+    nib: cleanNib,
+    alamat: alamat ? alamat.trim() : '',
+    waUsaha: waUsaha ? String(waUsaha).trim() : (noHp ? String(noHp).trim() : ''),
+    tahunMulai: new Date().getFullYear(),
+  });
+
+  await auditLog.write({
+    actorId: stafId,
+    action: 'umkm.didaftarkan_manual_dinas',
+    entity: 'User',
+    entityId: user._id,
+    meta: { businessId: profile._id, namaUsaha, kecamatan },
+    ip,
+  });
+
+  return {
+    user: {
+      id: String(user._id),
+      nama: user.nama,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+    },
+    business: {
+      id: String(profile._id),
+      namaUsaha: profile.namaUsaha,
+      kecamatan: profile.kecamatan,
+      kategoriUtama: profile.kategoriUtama,
+      nib: profile.nib,
+    },
+    temporaryPassword: tempPassword,
+  };
+}
+
+/**
+ * UMKM Mengajukan Ulang Akun setelah Ditolak Dinas (AC-06-07)
+ */
+export async function reapplyAccount(businessId, userId, ip) {
+  const user = await User.findById(userId);
+  if (!user) throw AppError.notFound('Pengguna tidak ditemukan');
+
+  if (user.status !== 'ditolak') {
+    throw AppError.badRequest('Hanya akun yang berstatus ditolak yang dapat mengajukan ulang verifikasi.');
+  }
+
+  user.status = 'menunggu_persetujuan';
+  user.catatanStatus = null;
+  await user.save();
+
+  await auditLog.write({
+    actorId: userId,
+    action: 'akun.ajukan_ulang',
+    entity: 'User',
+    entityId: user._id,
+    meta: { businessId },
+    ip,
+  });
+
+  return {
+    status: user.status,
+    message: 'Pengajuan ulang verifikasi akun berhasil dikirim ke dinas.',
   };
 }

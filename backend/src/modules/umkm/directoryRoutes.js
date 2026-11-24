@@ -24,4 +24,7 @@ router.get('/summary', controller.getSummary);
 // [PBI-06 - AC-06-06 s/d AC-06-08] Persetujuan / penolakan akun mandiri UMKM
 router.patch('/:id/persetujuan', controller.verifyAccount);
 
+// [PBI-06 - AC-06-09] Pendaftaran manual UMKM binaan oleh staf dinas (jemput bola)
+router.post('/manual', controller.registerManual);
+
 export default router;

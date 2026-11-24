@@ -13,4 +13,7 @@ router.use(authenticate, authorize('umkm'), loadBusiness);
 router.get('/saya', controller.getMine);
 router.put('/saya', validate(updateProfilSchema), controller.updateMine);
 
+// [PBI-06 - AC-06-07] Ajukan ulang akun setelah data diperbaiki oleh UMKM yang berstatus ditolak
+router.post('/saya/ajukan-ulang', controller.reapply);
+
 export default router;

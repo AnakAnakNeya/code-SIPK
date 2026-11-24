@@ -27,3 +27,13 @@ export const verifyAccount = asyncHandler(async (req, res) => {
   const result = await service.verifyAccount(id, req.user.id, { keputusan, catatan }, req.ip);
   ok(res, result, `Akun UMKM berhasil di-${keputusan === 'setuju' ? 'setujui' : 'tolak'}`);
 });
+
+export const registerManual = asyncHandler(async (req, res) => {
+  const result = await service.registerManualByDinas(req.body, req.user.id, req.ip);
+  ok(res, result, 'UMKM berhasil didaftarkan secara manual oleh dinas', 201);
+});
+
+export const reapply = asyncHandler(async (req, res) => {
+  const result = await service.reapplyAccount(req.businessId, req.user.id, req.ip);
+  ok(res, result, 'Pengajuan ulang akun berhasil dikirim');
+});

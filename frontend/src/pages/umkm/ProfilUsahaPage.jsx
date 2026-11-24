@@ -55,6 +55,21 @@ export function ProfilUsahaPage() {
   const [masaSimpanBulan, setMasaSimpanBulan] = useState(12);
   const [fileToUpload, setFileToUpload] = useState(null);
   const [uploadErr, setUploadErr] = useState(null);
+  const [reapplying, setReapplying] = useState(false);
+
+  const handleReapply = async () => {
+    setReapplying(true);
+    setProfileErr(null);
+    try {
+      await api.post('/profil/saya/ajukan-ulang');
+      setProfileMsg('Pengajuan ulang verifikasi akun berhasil dikirim ke dinas.');
+      await refreshUser();
+    } catch (e) {
+      setProfileErr(e.message || 'Gagal mengajukan ulang akun');
+    } finally {
+      setReapplying(false);
+    }
+  };
 
   // Fetch Profil & Dokumen
   const loadData = async () => {
@@ -173,6 +188,35 @@ export function ProfilUsahaPage() {
           Kelola data sentra usaha dan unggah berkas legalitas untuk kurasi dinas.
         </p>
       </div>
+
+      {user?.status === 'ditolak' && (
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in">
+          <div className="space-y-1">
+            <span className="text-xs font-bold text-rose-700 uppercase tracking-wider block">
+              Pendaftaran Akun Ditolak oleh Dinas
+            </span>
+            <p className="text-sm font-semibold text-rose-900">
+              Catatan Dinas: {user?.catatanStatus || 'Silakan lengkapi berkas NIB atau perbaiki data profil usaha Anda.'}
+            </p>
+            <p className="text-xs text-rose-600">
+              Perbaiki informasi atau perizinan Anda di bawah, kemudian klik tombol ajukan ulang verifikasi.
+            </p>
+          </div>
+          <Button
+            onClick={handleReapply}
+            loading={reapplying}
+            className="bg-rose-600 hover:bg-rose-700 text-white font-bold shrink-0"
+          >
+            Ajukan Ulang Verifikasi
+          </Button>
+        </div>
+      )}
+
+      {user?.status === 'menunggu_persetujuan' && (
+        <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 font-medium">
+          Akun Anda sedang dalam antrean verifikasi staf Dinas Koperasi dan UKM Kabupaten Lebak. Anda tetap dapat melengkapi profil dan dokumen di bawah.
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Kolom Kiri: Form Profil Usaha (AC-01-16) */}

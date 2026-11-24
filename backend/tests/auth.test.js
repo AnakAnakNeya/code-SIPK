@@ -276,3 +276,73 @@ describe('profil usaha', () => {
     assert.equal((await staf.get(`${API}/profil/saya`)).status, 403);
   });
 });
+
+describe('PBI-06: Pendaftaran UMKM Manual & Ajukan Ulang Akun [Naila]', () => {
+  it('AC-06-09: Staf mendaftarkan UMKM manual lapangan -> akun langsung aktif dengan temporary password', async () => {
+    await makeUser({ email: 'staf-manual@example.com', role: 'staf' });
+    const staf = request.agent(app);
+    await staf.post(`${API}/auth/login`).send({ identifier: 'staf-manual@example.com', password: 'Password123' });
+
+    const manualData = {
+      nama: 'Pak Jaja Kanekes',
+      email: 'jaja.baduy@example.com',
+      noHp: '081298765432',
+      namaUsaha: 'Tenun Baduy Jaja Indah',
+      kecamatan: 'Leuwidamar',
+      kategoriUtama: 'kriya_tenun',
+      subKomoditas: 'Tenun Baduy',
+      nib: '8888777766665',
+      alamat: 'Kp. Gazebo Desa Kanekes',
+    };
+
+    const res = await staf.post(`${API}/umkm/manual`).send(manualData);
+    assert.equal(res.status, 201);
+    assert.equal(res.body.success, true);
+    assert.equal(res.body.data.user.status, 'aktif');
+    assert.equal(res.body.data.user.email, 'jaja.baduy@example.com');
+    assert.ok(res.body.data.temporaryPassword);
+    assert.equal(res.body.data.temporaryPassword.length >= 10, true);
+
+    // Login menggunakan kata sandi sementara yang diterbitkan dinas
+    const umkmAgent = request.agent(app);
+    const loginRes = await umkmAgent.post(`${API}/auth/login`).send({
+      identifier: 'jaja.baduy@example.com',
+      password: res.body.data.temporaryPassword,
+    });
+    assert.equal(loginRes.status, 200);
+    assert.equal(loginRes.body.data.mustChangePassword, true);
+  });
+
+  it('AC-06-07: UMKM yang ditolak dinas dapat mengajukan ulang verifikasi', async () => {
+    const umkmUser = await makeUser({
+      email: 'umkm-revisi@example.com',
+      role: 'umkm',
+      status: 'ditolak',
+      catatanStatus: 'NIB tidak terbaca jelas',
+    });
+    await BusinessProfile.create({
+      userId: umkmUser._id,
+      namaUsaha: 'Usaha Revisi Jaya',
+      kecamatan: 'Rangkasbitung',
+      alamat: 'Jl. Multatuli No. 10, Rangkasbitung',
+      kategoriUtama: 'olahan_pangan',
+      waUsaha: '081234567890',
+      nib: '1234567890123',
+    });
+
+    const umkmAgent = request.agent(app);
+    await umkmAgent.post(`${API}/auth/login`).send({
+      identifier: 'umkm-revisi@example.com',
+      password: 'Password123',
+    });
+
+    const res = await umkmAgent.post(`${API}/profil/saya/ajukan-ulang`);
+    assert.equal(res.status, 200);
+    assert.equal(res.body.data.status, 'menunggu_persetujuan');
+
+    // Cek status user setelah ajukan ulang
+    const meRes = await umkmAgent.get(`${API}/auth/me`);
+    assert.equal(meRes.body.data.status, 'menunggu_persetujuan');
+    assert.equal(meRes.body.data.catatanStatus, null);
+  });
+});
