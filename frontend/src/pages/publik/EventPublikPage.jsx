@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, MapPin, Clock, FileCheck, ArrowRight, Sparkles } from 'lucide-react';
 import { api } from '../../services/api.js';
+import { PublicNavbar } from '../../layouts/PublicNavbar.jsx';
 import { Card, CardHeader, CardContent } from '../../components/ui/Card.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 
@@ -31,7 +32,8 @@ export function EventPublikPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      <PublicNavbar />
       {/* Header Publik */}
       <header className="bg-navy-900 text-white py-12 px-4 sm:px-6 lg:px-8 border-b border-navy-800">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">

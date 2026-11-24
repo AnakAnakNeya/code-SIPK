@@ -1,46 +1,39 @@
 // ============================================================================
-// Layout Halaman Autentikasi SIPK-Lebak (frontend/src/layouts/AuthLayout.jsx)
-// Panel Navy Brand kiri & Panel Formulir kanan (< 300 KB)
+// Layout Autentikasi (frontend/src/layouts/AuthLayout.jsx)
+// Sesuai desain: panel navy kiri (brand + judul) & panel putih kanan (form)
 // ============================================================================
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck } from 'lucide-react';
 
 export function AuthLayout({ children, title, subtitle }) {
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-slate-50">
-      {/* Panel Kiri Navy Brand */}
-      <div className="md:w-5/12 lg:w-4/12 bg-navy-900 text-white p-8 md:p-12 flex flex-col justify-between">
-        <div>
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center font-extrabold text-navy-950 text-xl shadow-lg">
-              SL
-            </div>
-            <div>
-              <h1 className="font-extrabold tracking-tight text-lg text-white">SIPK-LEBAK</h1>
-              <p className="text-xs text-slate-300">Pemasaran Kolaboratif UMKM</p>
-            </div>
+    <div className="min-h-screen flex flex-col md:flex-row bg-white">
+      {/* Panel Kiri Navy */}
+      <div className="md:w-1/2 bg-navy-900 text-white px-8 py-10 md:px-[60px] md:py-[80px] flex flex-col justify-between">
+        <div className="flex items-center gap-3.5">
+          <div className="w-[55px] h-[55px] rounded-xl bg-amber-500 flex items-center justify-center font-extrabold text-navy-900 text-2xl">
+            SL
           </div>
-
-          <div className="mt-12">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-navy-800 text-amber-400 border border-navy-700 mb-4">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              Dinas Koperasi & UMKM Kab. Lebak
-            </span>
-            <h2 className="text-2xl md:text-3xl font-extrabold text-white leading-tight">
-              Pusat Kurasi & Pemasaran Komoditas Unggulan Lebak.
-            </h2>
-            <p className="mt-4 text-sm text-slate-300 leading-relaxed">
-              Mewadahi produk olahan pangan dan kriya tenun khas Lebak menuju standardisasi mutu,
-              lencana kurasi resmi dinas, dan kemitraan pasar yang berkelanjutan.
-            </p>
+          <div>
+            <h1 className="font-bold text-xl text-white leading-tight">SIPK-LEBAK</h1>
+            <p className="text-sm text-slate-300">Dinas Koperasi & UKM</p>
           </div>
         </div>
 
-        <div className="pt-8 mt-8 border-t border-navy-800 text-xs text-slate-400 flex items-center justify-between">
-          <span>&copy; {new Date().getFullYear()} Pemkab Lebak</span>
-          <Link to="/katalog" className="text-amber-400 hover:underline">
+        <div className="my-12 md:my-0">
+          <h2 className="text-3xl font-bold text-white leading-snug max-w-md">
+            Sistem Informasi Pembinaan & Kurasi UMKM
+          </h2>
+          <p className="mt-4 text-base text-slate-300 leading-relaxed max-w-md">
+            Portal resmi verifikasi kelayakan produk, standardisasi legalitas komoditas, dan agregasi
+            kemitraan pasar Kabupaten Lebak.
+          </p>
+        </div>
+
+        <div className="pt-4 border-t border-blue-900/60 text-xs text-slate-400 flex items-center justify-between gap-4">
+          <span>Pemerintah Kabupaten Lebak &bull; Dinas Koperasi dan Usaha Kecil Menengah</span>
+          <Link to="/katalog" className="text-amber-400 hover:underline whitespace-nowrap">
             Katalog Publik &rarr;
           </Link>
         </div>
@@ -51,7 +44,7 @@ export function AuthLayout({ children, title, subtitle }) {
         <div className="w-full max-w-xl">
           {(title || subtitle) && (
             <div className="mb-8">
-              {title && <h2 className="text-2xl font-extrabold text-navy-900">{title}</h2>}
+              {title && <h2 className="text-2xl font-bold text-slate-900">{title}</h2>}
               {subtitle && <p className="text-sm text-slate-500 mt-1.5">{subtitle}</p>}
             </div>
           )}

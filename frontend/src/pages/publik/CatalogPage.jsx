@@ -1,16 +1,11 @@
 // ============================================================================
-// [PBI-05] Halaman Publik: Katalog Komoditas Terkurasi Lebak (frontend/src/pages/publik/CatalogPage.jsx)
-// PIC: Fariz
-// Kriteria:
-// - AC-05-01 & AC-05-02: Dapat dibuka tanpa login, hanya produk 'terkurasi' yang tampil
-// - AC-05-03 s/d AC-05-05: Grid kartu responsif, pencarian teks, filter 28 kecamatan & kategori
-// - AC-05-08 & AC-05-09: Lencana grade resmi, nomor WA hanya untuk pengguna yang login
+// [PBI-05] Halaman Katalog Komoditas Terkurasi Lebak (frontend/src/pages/publik/CatalogPage.jsx)
+// Tampilan disesuaikan dengan desain stitch: sipk_lebak_katalog_produk_umkm
 // ============================================================================
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  ShoppingBag,
   Search,
   Filter,
   Award,
@@ -19,78 +14,114 @@ import {
   ShieldCheck,
   MapPin,
   ExternalLink,
+  Package,
+  Download,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { AppLayout } from '../../layouts/AppLayout.jsx';
+import { PublicNavbar } from '../../layouts/PublicNavbar.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Card } from '../../components/ui/Card.jsx';
+import { Modal } from '../../components/Modal.jsx';
 import { KECAMATAN } from '../../constants/kecamatan.js';
 
-// Dummy dataset awal sebelum dihubungkan dengan API katalog dinas (PRD 5.2)
 const DUMMY_PRODUCTS = [
   {
     id: 'prod-001',
     nama: 'Tenun Ikat Baduy Motif Suat Songket',
     kategori: 'kriya_tenun',
-    kategoriLabel: 'Kriya & Tenun',
+    kategoriLabel: 'Kriya Tradisional & Tenun',
     subKomoditas: 'Tenun Suat Songket',
-    namaUsaha: 'UMKM Tenun Ambu Kanekes',
+    namaUsaha: 'Sanggar Tenun Ambu Kanekes',
     kecamatan: 'Leuwidamar',
     hargaAcuan: 350000,
     satuan: 'lembar',
     kapasitasBulanan: 45,
-    gradeKurasi: 'B',
+    gradeKurasi: 'A',
     terkurasiAt: '2026-11-10',
     nomorSK: 'SK-KUR/001/XI/2026',
     deskripsi: 'Kain tenun asli buatan tangan perajin perempuan Kanekes Baduy Luar menggunakan alat tenun bukan mesin (ATBM) dengan pewarna alami.',
   },
   {
     id: 'prod-002',
-    nama: 'Emping Melinjo Khas Lebak 250g',
+    nama: 'Gula Aren Semut Organik 500g',
     kategori: 'olahan_pangan',
-    kategoriLabel: 'Olahan Pangan',
-    subKomoditas: 'Emping Melinjo Super Tipis',
-    namaUsaha: 'Berkah Melinjo Menes-Rangkas',
-    kecamatan: 'Rangkasbitung',
+    kategoriLabel: 'Olahan Pangan & Minuman',
+    subKomoditas: 'Gula Aren Semut',
+    namaUsaha: 'KUB Aren Jaya Sobang',
+    kecamatan: 'Sobang',
     hargaAcuan: 28000,
-    satuan: 'bungkus',
+    satuan: 'pak',
     kapasitasBulanan: 600,
     gradeKurasi: 'A',
     terkurasiAt: '2026-11-05',
     nomorSK: 'SK-KUR/002/XI/2026',
-    deskripsi: 'Emping melinjo olahan perajin lokal dengan kualitas biji pilihan tanpa pengawet kimia, renyah, gurih, dan beraroma khas.',
+    deskripsi: 'Gula aren bubuk organik dari nira aren pegunungan Sobang dengan kadar air rendah dan kemasan kedap udara.',
   },
   {
     id: 'prod-003',
-    nama: 'Madu Hutan Ujung Lebak Asli 500ml',
+    nama: 'Kopi Robusta Hariang Roast 200g',
     kategori: 'olahan_pangan',
-    kategoriLabel: 'Olahan Pangan',
-    subKomoditas: 'Madu Odeng Murni',
-    namaUsaha: 'Kelompok Tani Lebak Lestari',
-    kecamatan: 'Cilograng',
-    hargaAcuan: 110000,
-    satuan: 'botol',
-    kapasitasBulanan: 120,
+    kategoriLabel: 'Olahan Pangan & Minuman',
+    subKomoditas: 'Kopi Robusta',
+    namaUsaha: 'Poktan Barokah Kopi Lebak',
+    kecamatan: 'Sobang',
+    hargaAcuan: 42000,
+    satuan: 'pouch',
+    kapasitasBulanan: 250,
     gradeKurasi: 'A',
-    terkurasiAt: '2026-11-08',
+    terkurasiAt: '2026-11-02',
     nomorSK: 'SK-KUR/003/XI/2026',
-    deskripsi: 'Madu murni hasil panen lebah pohon Apis dorsata di kawasan hutan perbukitan Lebak Selatan, kadar air rendah & berkhasiat.',
+    deskripsi: 'Kopi robusta petik merah pegunungan Lebak dengan aroma harum khas roasted biji pilihan.',
   },
   {
     id: 'prod-004',
-    nama: 'Gula Aren Organik Batok & Semut',
+    nama: 'Tas Koja Serat Teureup Alami',
+    kategori: 'kriya_tenun',
+    kategoriLabel: 'Kriya Tradisional & Tenun',
+    subKomoditas: 'Tas Koja Baduy',
+    namaUsaha: 'Kriya Etnik Kanekes',
+    kecamatan: 'Leuwidamar',
+    hargaAcuan: 85000,
+    satuan: 'buah',
+    kapasitasBulanan: 120,
+    gradeKurasi: 'A',
+    terkurasiAt: '2026-10-28',
+    nomorSK: 'SK-KUR/004/X/2026',
+    deskripsi: 'Tas selempang tradisional Baduy dari anyaman serat kulit kayu teureup yang kuat, tahan air, dan ramah lingkungan.',
+  },
+  {
+    id: 'prod-005',
+    nama: 'Sale Pisang Siuh Renyah 250g',
     kategori: 'olahan_pangan',
-    kategoriLabel: 'Olahan Pangan',
-    subKomoditas: 'Gula Semut Aren',
-    namaUsaha: 'Koperasi Nira Mandiri Sobang',
-    kecamatan: 'Sobang',
-    hargaAcuan: 38000,
-    satuan: 'kemasan 500g',
-    kapasitasBulanan: 850,
+    kategoriLabel: 'Olahan Pangan & Minuman',
+    subKomoditas: 'Sale Pisang',
+    namaUsaha: 'UMKM Barokah Salepisan',
+    kecamatan: 'Cibadak',
+    hargaAcuan: 18500,
+    satuan: 'pak',
+    kapasitasBulanan: 400,
     gradeKurasi: 'B',
-    terkurasiAt: '2026-11-12',
-    nomorSK: 'SK-KUR/004/XI/2026',
-    deskripsi: 'Gula aren cetak dan bubuk kristal dari nira pohon aren pegunungan Halimun Salak, indeks glikemik rendah dan aroma harum alami.',
+    terkurasiAt: '2026-10-25',
+    nomorSK: 'SK-KUR/005/X/2026',
+    deskripsi: 'Sale pisang khas Lebak dengan pengasapan tradisional dan lapisan tepung krispi manis alami.',
+  },
+  {
+    id: 'prod-006',
+    nama: 'Gula Aren Cetak Koin Tradisional',
+    kategori: 'olahan_pangan',
+    kategoriLabel: 'Olahan Pangan & Minuman',
+    subKomoditas: 'Gula Aren Cetak',
+    namaUsaha: 'KUB Aren Jaya Sobang',
+    kecamatan: 'Sobang',
+    hargaAcuan: 22000,
+    satuan: 'ikat',
+    kapasitasBulanan: 800,
+    gradeKurasi: 'A',
+    terkurasiAt: '2026-10-20',
+    nomorSK: 'SK-KUR/006/X/2026',
+    deskripsi: 'Gula aren padat murni dicetak batok kelapa tradisional tanpa campuran pemanis buatan.',
   },
 ];
 
@@ -99,7 +130,6 @@ export function CatalogPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedKecamatan, setSelectedKecamatan] = useState('');
   const [selectedKategori, setSelectedKategori] = useState('');
-  const [selectedGrade, setSelectedGrade] = useState('');
   const [activeModalProduct, setActiveModalProduct] = useState(null);
 
   const filteredProducts = DUMMY_PRODUCTS.filter((prod) => {
@@ -110,49 +140,59 @@ export function CatalogPage() {
       prod.namaUsaha.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesKec = !selectedKecamatan || prod.kecamatan === selectedKecamatan;
     const matchesKat = !selectedKategori || prod.kategori === selectedKategori;
-    const matchesGrade = !selectedGrade || prod.gradeKurasi === selectedGrade;
-    return matchesSearch && matchesKec && matchesKat && matchesGrade;
+    return matchesSearch && matchesKec && matchesKat;
   });
 
-  return (
+  const content = (
     <div className="space-y-6">
-      {/* Banner Hero Publik */}
-      <div className="bg-gradient-to-r from-navy-950 via-navy-900 to-navy-800 rounded-2xl p-6 sm:p-8 text-white shadow-xl">
-        <div className="max-w-3xl space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold border border-amber-500/40">
-            <ShieldCheck className="w-4 h-4" />
-            <span>Katalog Resmi Komoditas Terkurasi Kabupaten Lebak</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Etalase Produk Unggulan & Komoditas Ekspor UMKM Lebak
+      {/* Header Halaman */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+        <div>
+          <h1 className="text-2xl font-bold text-navy-900 tracking-tight">
+            Katalog Produk Unggulan Terkurasi
           </h1>
-          <p className="text-sm text-slate-300 leading-relaxed">
-            Semua komoditas dalam katalog ini telah lolos proses kurasi berstandar resmi oleh Tim Kurator Dinas Koperasi & UKM Kabupaten Lebak dengan sertifikat verifikasi grade mutu A, B, atau C.
+          <p className="text-sm text-slate-500 mt-0.5">
+            Menampilkan produk komoditas UMKM Kabupaten Lebak yang telah memenuhi standar mutu dan kelengkapan izin dinas.
           </p>
         </div>
+
+        <button
+          onClick={() => alert('Mengunduh e-katalog terkurasi Lebak format PDF...')}
+          className="flex items-center gap-2 px-4 py-2 bg-navy-900 hover:bg-[#1E3A8A] text-white text-xs font-semibold rounded-lg transition self-start shrink-0 shadow-xs"
+        >
+          <Download className="w-3.5 h-3.5" />
+          <span>Unduh E-Katalog (.pdf)</span>
+        </button>
       </div>
 
-      {/* Filter & Search Bar Interaktif */}
-      <Card className="p-4 bg-white shadow-xs">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-            <input
-              type="text"
-              placeholder="Cari nama produk, komoditas..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-            />
+      {/* Filter Bar (Sesuai Desain Stitch) */}
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+          <div>
+            <label className="block text-[11px] uppercase font-bold tracking-wider text-slate-500 mb-1.5">
+              Kategori Komoditas
+            </label>
+            <select
+              value={selectedKategori}
+              onChange={(e) => setSelectedKategori(e.target.value)}
+              className="w-full h-10 px-3 text-xs border border-slate-200 rounded-lg outline-none focus:border-navy-900 bg-white"
+            >
+              <option value="">Semua Kategori</option>
+              <option value="olahan_pangan">Olahan Pangan & Minuman</option>
+              <option value="kriya_tenun">Kriya Tradisional & Tenun</option>
+            </select>
           </div>
 
           <div>
+            <label className="block text-[11px] uppercase font-bold tracking-wider text-slate-500 mb-1.5">
+              Kecamatan (28 Wilayah)
+            </label>
             <select
               value={selectedKecamatan}
               onChange={(e) => setSelectedKecamatan(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+              className="w-full h-10 px-3 text-xs border border-slate-200 rounded-lg outline-none focus:border-navy-900 bg-white"
             >
-              <option value="">Semua Kecamatan (28 Kecamatan)</option>
+              <option value="">Semua Kecamatan (28 Wilayah)</option>
               {KECAMATAN.map((kec) => (
                 <option key={kec} value={kec}>
                   {kec}
@@ -162,185 +202,180 @@ export function CatalogPage() {
           </div>
 
           <div>
-            <select
-              value={selectedKategori}
-              onChange={(e) => setSelectedKategori(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
-            >
-              <option value="">Semua Kategori Usaha</option>
-              <option value="olahan_pangan">Olahan Pangan & Kuliner</option>
-              <option value="kriya_tenun">Kriya & Tenun Baduy</option>
-              <option value="pertanian_perkebunan">Pertanian & Perkebunan</option>
-              <option value="jasa_wisata">Jasa & Produk Kreatif</option>
-            </select>
+            <label className="block text-[11px] uppercase font-bold tracking-wider text-slate-500 mb-1.5">
+              Pencarian
+            </label>
+            <div className="relative">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              <input
+                type="text"
+                placeholder="Nama produk / UMKM..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full h-10 pl-9 pr-3 text-xs border border-slate-200 rounded-lg outline-none focus:border-navy-900"
+              />
+            </div>
           </div>
 
           <div>
-            <select
-              value={selectedGrade}
-              onChange={(e) => setSelectedGrade(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+            <button
+              onClick={() => {}}
+              className="w-full h-10 bg-navy-900 hover:bg-[#1E3A8A] text-white text-xs font-semibold rounded-lg transition"
             >
-              <option value="">Semua Grade Kurasi</option>
-              <option value="A">Grade A (Siap Ekspor / Skala Besar)</option>
-              <option value="B">Grade B (Standar Pasar Modern / B2B)</option>
-              <option value="C">Grade C (Pasar Lokal Kabupaten)</option>
-            </select>
+              Terapkan Filter
+            </button>
           </div>
         </div>
-      </Card>
+      </div>
 
-      {/* Grid Kartu Produk Terkurasi */}
+      {/* Grid Kartu Produk (Sesuai Desain Stitch) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProducts.map((prod) => (
-          <Card key={prod.id} className="overflow-hidden flex flex-col justify-between hover:shadow-lg transition">
-            <div className="p-5 space-y-4">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
-                    {prod.kategoriLabel}
-                  </span>
-                  <h3 className="text-base font-bold text-slate-900 mt-2 line-clamp-1">{prod.nama}</h3>
-                  <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
-                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Kecamatan {prod.kecamatan}</span>
-                  </p>
-                </div>
-                <div
-                  className={`px-3 py-1.5 rounded-xl font-black text-sm flex items-center gap-1 shadow-xs border ${
-                    prod.gradeKurasi === 'A'
-                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                      : prod.gradeKurasi === 'B'
-                      ? 'bg-blue-50 text-blue-800 border-blue-300'
-                      : 'bg-amber-50 text-amber-800 border-amber-300'
-                  }`}
-                >
-                  <Award className="w-4 h-4" />
-                  <span>Grade {prod.gradeKurasi}</span>
-                </div>
+          <div
+            key={prod.id}
+            className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md transition flex flex-col justify-between"
+          >
+            <div>
+              {/* Slot Foto Komoditas */}
+              <div className="relative h-48 bg-slate-100 flex flex-col items-center justify-center text-slate-400 border-b border-slate-100">
+                <span className="absolute top-3 right-3 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  TERKURASI DINAS
+                </span>
+                <Package className="w-12 h-12 stroke-1 text-slate-300 mb-1" />
+                <span className="text-xs font-medium text-slate-400">FOTO KOMODITAS</span>
               </div>
 
-              <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">{prod.deskripsi}</p>
-
-              <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-3 rounded-lg border border-slate-100">
-                <div>
-                  <span className="text-slate-400 block text-[10px]">Harga Acuan</span>
-                  <span className="font-bold text-slate-800">
-                    Rp {prod.hargaAcuan.toLocaleString('id-ID')}
-                  </span>
-                  <span className="text-[10px] text-slate-500"> / {prod.satuan}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10px]">Kapasitas Produksi</span>
-                  <span className="font-bold text-slate-800">
-                    {prod.kapasitasBulanan} {prod.satuan}
-                  </span>
-                  <span className="text-[10px] text-slate-500"> / bulan</span>
-                </div>
-              </div>
-
-              <div className="text-[11px] text-slate-500 flex items-center gap-1.5 pt-1">
-                <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                <span className="font-medium text-slate-700">{prod.namaUsaha}</span>
+              {/* Rincian Produk */}
+              <div className="p-5 space-y-2">
+                <p className="text-[11px] uppercase tracking-wider font-bold text-slate-400">
+                  {prod.kategoriLabel}
+                </p>
+                <h3 className="font-bold text-base text-navy-900 leading-snug">
+                  {prod.nama}
+                </h3>
+                <p className="text-xs text-slate-600 font-medium">{prod.namaUsaha}</p>
+                <p className="text-xs text-slate-500 flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Kecamatan {prod.kecamatan}</span>
+                </p>
               </div>
             </div>
 
-            <div className="px-5 py-3.5 bg-slate-50/70 border-t border-slate-100 flex items-center justify-between gap-2">
-              <span className="text-[10px] text-slate-400 font-mono">No. SK: {prod.nomorSK}</span>
-              <Button size="sm" variant="outline" onClick={() => setActiveModalProduct(prod)}>
-                Detail & Kontak
-              </Button>
+            {/* Footer Kartu: Harga & Tombol Detail */}
+            <div className="px-5 py-4 border-t border-slate-100 flex items-center justify-between">
+              <div>
+                <p className="text-[11px] text-slate-400">Harga Acuan</p>
+                <p className="text-sm font-extrabold text-navy-900">
+                  Rp{prod.hargaAcuan.toLocaleString('id-ID')}{' '}
+                  <span className="text-xs font-normal text-slate-500">/ {prod.satuan}</span>
+                </p>
+              </div>
+
+              <button
+                onClick={() => setActiveModalProduct(prod)}
+                className="px-3.5 py-1.5 rounded-md border border-slate-200 hover:border-navy-900 text-navy-900 text-xs font-semibold transition"
+              >
+                Lihat Detail
+              </button>
             </div>
-          </Card>
+          </div>
         ))}
       </div>
 
-      {filteredProducts.length === 0 && (
-        <div className="text-center py-12 bg-white rounded-xl border border-dashed border-slate-300">
-          <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h4 className="font-semibold text-slate-700">Tidak ada komoditas yang cocok</h4>
-          <p className="text-xs text-slate-500 mt-1">Coba sesuaikan kata kunci pencarian atau bersihkan filter Anda.</p>
-        </div>
-      )}
-
-      {/* Modal Detail & Proteksi Kontak UMKM (AC-05-09) */}
-      {activeModalProduct && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                  {activeModalProduct.kategoriLabel}
+      {/* Modal Detail Produk Terkurasi */}
+      <Modal
+        isOpen={!!activeModalProduct}
+        onClose={() => setActiveModalProduct(null)}
+        title={activeModalProduct?.nama || 'Detail Komoditas'}
+        size="md"
+      >
+        {activeModalProduct && (
+          <div className="space-y-4 text-xs">
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-navy-900 text-sm">
+                  {activeModalProduct.namaUsaha}
                 </span>
-                <h3 className="text-lg font-bold text-slate-900 mt-1">{activeModalProduct.nama}</h3>
-                <p className="text-xs text-slate-500">{activeModalProduct.namaUsaha} - Kec. {activeModalProduct.kecamatan}</p>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                  Grade {activeModalProduct.gradeKurasi}
+                </span>
               </div>
-              <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
-                Grade {activeModalProduct.gradeKurasi}
-              </span>
+              <p className="text-slate-500 flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5" />
+                <span>Kecamatan {activeModalProduct.kecamatan}, Kab. Lebak</span>
+              </p>
+              <p className="text-slate-600 leading-relaxed">{activeModalProduct.deskripsi}</p>
             </div>
 
-            <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">
-              {activeModalProduct.deskripsi}
-            </p>
-
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="p-3 rounded-lg bg-slate-50 border border-slate-100">
-                <span className="text-slate-400 block text-[10px]">Harga Acuan</span>
-                <span className="font-bold text-slate-800 text-sm">
-                  Rp {activeModalProduct.hargaAcuan.toLocaleString('id-ID')} / {activeModalProduct.satuan}
-                </span>
-              </div>
-              <div className="p-3 rounded-lg bg-slate-50 border border-slate-100">
-                <span className="text-slate-400 block text-[10px]">Kapasitas Produksi</span>
-                <span className="font-bold text-slate-800 text-sm">
-                  {activeModalProduct.kapasitasBulanan} {activeModalProduct.satuan}/bulan
-                </span>
-              </div>
-            </div>
-
-            {/* Proteksi Kontak Sesuai Kriteria AC-05-09 */}
-            {user ? (
-              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 space-y-2">
-                <div className="flex items-center gap-2 text-emerald-800 font-semibold text-xs">
-                  <Phone className="w-4 h-4 text-emerald-600" />
-                  <span>Kontak Resmi Terverifikasi (Mitra / Akun Login)</span>
-                </div>
-                <p className="text-xs text-emerald-900 font-mono font-medium">WhatsApp: +62 812-8899-7722</p>
-                <a
-                  href="https://wa.me/6281288997722"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition"
-                >
-                  <span>Hubungi via WhatsApp</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              </div>
-            ) : (
-              <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 space-y-2">
-                <p className="text-xs text-amber-900 leading-relaxed">
-                  <strong>Proteksi Kontak UMKM:</strong> Nomor WhatsApp dan kontak langsung pelaku usaha hanya dapat diakses oleh Mitra Bisnis / Pembeli B2B yang telah memiliki akun terdaftar dan terverifikasi.
+            <div className="grid grid-cols-2 gap-3 text-slate-700">
+              <div className="p-3 bg-white border border-slate-200 rounded-lg">
+                <p className="text-[11px] text-slate-400">Harga Acuan Resmi</p>
+                <p className="font-bold text-sm text-navy-900 mt-0.5">
+                  Rp{activeModalProduct.hargaAcuan.toLocaleString('id-ID')} / {activeModalProduct.satuan}
                 </p>
-                <div className="flex items-center gap-2 pt-1">
-                  <Link to="/login" className="px-3 py-1.5 bg-navy-900 text-white rounded-lg text-xs font-semibold hover:bg-navy-800">
-                    Masuk Akun
-                  </Link>
-                  <Link to="/register" className="px-3 py-1.5 bg-amber-500 text-navy-950 rounded-lg text-xs font-semibold hover:bg-amber-400">
-                    Daftar Mitra
+              </div>
+              <div className="p-3 bg-white border border-slate-200 rounded-lg">
+                <p className="text-[11px] text-slate-400">Kapasitas Produksi</p>
+                <p className="font-bold text-sm text-navy-900 mt-0.5">
+                  {activeModalProduct.kapasitasBulanan} {activeModalProduct.satuan} / bln
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3 bg-white border border-slate-200 rounded-lg">
+              <p className="text-[11px] text-slate-400">Surat Keputusan (SK) Kurasi Mutu</p>
+              <p className="font-mono font-bold text-navy-900 mt-0.5">{activeModalProduct.nomorSK}</p>
+            </div>
+
+            {/* Proteksi Kontak sesuai PRD AC-05-08 */}
+            <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl">
+              {user ? (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-bold text-amber-900">Kontak WhatsApp Pelaku Usaha:</p>
+                    <p className="text-amber-800 font-mono mt-0.5">+62 812-9844-1920 (Terverifikasi)</p>
+                  </div>
+                  <a
+                    href="https://wa.me/6281298441920"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-bold text-xs hover:bg-emerald-700"
+                  >
+                    Hubungi WA
+                  </a>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-amber-900 text-[11px]">
+                    Nomor kontak langsung pelaku usaha dilindungi. Silakan masuk untuk melihat kontak.
+                  </p>
+                  <Link
+                    to="/login"
+                    className="px-3 py-1.5 bg-navy-900 text-white rounded-lg font-bold text-xs whitespace-nowrap"
+                  >
+                    Masuk
                   </Link>
                 </div>
-              </div>
-            )}
-
-            <div className="flex justify-end pt-2">
-              <Button variant="outline" size="sm" onClick={() => setActiveModalProduct(null)}>
-                Tutup
-              </Button>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
+    </div>
+  );
+
+  // Jika sudah login, tampilkan dengan Sidebar & Navbar (AppLayout)
+  // Jika belum login, tampilkan dengan PublicNavbar di kontainer penuh
+  if (user) {
+    return <AppLayout>{content}</AppLayout>;
+  }
+
+  return (
+    <div className="min-h-screen bg-[#F1F5F9] flex flex-col">
+      <PublicNavbar />
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+        {content}
+      </main>
     </div>
   );
 }

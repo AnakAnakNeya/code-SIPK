@@ -23,15 +23,7 @@ export function AppLayout({ children }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
-      {/* Mobile Top Navbar */}
-      <Navbar
-        user={user}
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-        onLogout={handleLogout}
-      />
-
+    <div className="min-h-screen bg-[#F1F5F9] flex">
       {/* Sidebar Modular */}
       <Sidebar
         user={user}
@@ -50,7 +42,9 @@ export function AppLayout({ children }) {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+      <div className="flex-1 flex flex-col min-w-0">
+      <Navbar user={user} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <main className="flex-1 flex flex-col min-w-0">
         {/* Banner Status Akun UMKM */}
         {user?.role === 'UMKM' && user?.statusAkun !== 'AKTIF' && (
           <div
@@ -88,6 +82,7 @@ export function AppLayout({ children }) {
         {/* Child Pages Container */}
         <div className="p-4 md:p-8 max-w-7xl w-full mx-auto">{children}</div>
       </main>
+      </div>
     </div>
   );
 }

@@ -1,15 +1,12 @@
 // ============================================================================
-// [PBI-01] Halaman Masuk Multi-Identifier (FR-01)
-// PIC: Naila
-// Kriteria: AC-01-08 (Input Email atau 13 Digit NIB, Ingat Saya, Tautan Lupa Sandi & Daftar)
+// [PBI-01] Halaman Masuk Multi-Identifier (frontend/src/pages/auth/LoginPage.jsx)
+// Tampilan disesuaikan dengan desain stitch: sipk_lebak_login
 // ============================================================================
 
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { AuthLayout } from '../../layouts/AuthLayout.jsx';
-import { Input } from '../../components/ui/Input.jsx';
-import { Button } from '../../components/ui/Button.jsx';
 import { Alert } from '../../components/ui/Alert.jsx';
 
 export function LoginPage() {
@@ -40,8 +37,8 @@ export function LoginPage() {
 
   return (
     <AuthLayout
-      title="Masuk ke SIPK-Lebak"
-      subtitle="Gunakan alamat email atau 13 digit NIB terdaftar Anda."
+      title="Masuk ke Portal"
+      subtitle="Masukkan kredensial akun terdaftar Anda"
     >
       {error && (
         <Alert type="error" className="mb-6">
@@ -50,32 +47,42 @@ export function LoginPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Input
-          label="Email atau NIB"
-          id="identifier"
-          name="identifier"
-          required
-          autoComplete="username"
-          placeholder="nama@contoh.com atau 13 digit NIB"
-          helperText="Ketik 13 digit angka untuk masuk menggunakan NIB OSS-RBA"
-          value={identifier}
-          onChange={(e) => setIdentifier(e.target.value)}
-        />
+        <div>
+          <label className="block text-[13px] font-semibold text-slate-900 mb-1.5">
+            Email atau Nomor Induk Berusaha (NIB)
+          </label>
+          <input
+            id="identifier"
+            name="identifier"
+            type="text"
+            required
+            autoComplete="username"
+            placeholder="nama@email.com atau 13 digit NIB"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            className="w-full h-11 px-3.5 text-sm rounded-md border border-slate-200 outline-none focus:border-navy-900 transition bg-white"
+          />
+        </div>
 
-        <Input
-          label="Kata Sandi"
-          id="password"
-          name="password"
-          type="password"
-          required
-          autoComplete="current-password"
-          placeholder="••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        <div>
+          <label className="block text-[13px] font-semibold text-slate-900 mb-1.5">
+            Kata Sandi
+          </label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            required
+            autoComplete="current-password"
+            placeholder="••••••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full h-11 px-3.5 text-sm rounded-md border border-slate-200 outline-none focus:border-navy-900 transition bg-white"
+          />
+        </div>
 
-        <div className="flex items-center justify-between text-xs pt-1">
-          <label className="flex items-center gap-2 cursor-pointer text-slate-600 select-none">
+        <div className="flex items-center justify-between text-[13px] pt-1">
+          <label className="flex items-center gap-2 cursor-pointer text-slate-700 select-none">
             <input
               type="checkbox"
               checked={remember}
@@ -87,35 +94,31 @@ export function LoginPage() {
 
           <Link
             to="/forgot-password"
-            className="font-medium text-navy-900 hover:text-amber-600 transition"
+            className="font-medium text-[#1E3A8A] hover:underline"
           >
-            Lupa kata sandi?
+            Lupa sandi?
           </Link>
         </div>
 
         <div className="pt-2">
-          <Button
+          <button
             type="submit"
-            variant="primary"
-            size="lg"
-            className="w-full font-bold"
-            loading={loading}
+            disabled={loading}
+            className="w-full h-11 bg-navy-900 hover:bg-[#1E3A8A] text-white text-sm font-semibold rounded-md transition flex items-center justify-center cursor-pointer disabled:opacity-50"
           >
-            Masuk ke Sistem
-          </Button>
+            {loading ? 'Memeriksa...' : 'Masuk'}
+          </button>
         </div>
       </form>
 
-      <div className="mt-8 pt-6 border-t border-slate-200 text-center">
-        <p className="text-sm text-slate-600">
-          Belum memiliki akun usaha binaan?{' '}
-          <Link
-            to="/register"
-            className="font-bold text-navy-900 hover:text-amber-600 transition"
-          >
-            Daftar sebagai Pelaku UMKM
-          </Link>
-        </p>
+      <div className="mt-7 pt-5 border-t border-slate-200 text-center text-[13px] text-slate-500">
+        <p>Belum memiliki akun usaha?</p>
+        <Link
+          to="/register"
+          className="font-semibold text-[#1E3A8A] hover:underline block mt-1"
+        >
+          Daftar sebagai Pelaku UMKM
+        </Link>
       </div>
     </AuthLayout>
   );

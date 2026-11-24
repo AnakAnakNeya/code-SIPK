@@ -63,11 +63,26 @@ function ProtectedRoute({ children, allowedRoles }) {
   return <AppLayout>{children}</AppLayout>;
 }
 
+function RootRedirect() {
+  const { user, loading, getHomePath } = useAuth();
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="w-8 h-8 border-4 border-navy-900 border-t-amber-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
+  if (user) {
+    return <Navigate to={getHomePath(user.role)} replace />;
+  }
+  return <Navigate to="/login" replace />;
+}
+
 export function App() {
   return (
     <Routes>
-      {/* Rute Publik */}
-      <Route path="/" element={<Navigate to="/katalog" replace />} />
+      {/* Rute Publik & Beranda Pintar */}
+      <Route path="/" element={<RootRedirect />} />
       <Route path="/katalog" element={<CatalogPage />} />
       <Route path="/agenda" element={<EventPublikPage />} />
       <Route path="/login" element={<LoginPage />} />
