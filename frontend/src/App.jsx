@@ -7,6 +7,7 @@ import { AppLayout } from './layouts/AppLayout.jsx';
 import LoginPage from './pages/auth/LoginPage.jsx';
 import RegisterWizardPage from './pages/auth/RegisterWizardPage.jsx';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage.jsx';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage.jsx';
 import CatalogPage from './pages/catalog/CatalogPage.jsx';
 import DashboardUmkmPage from './pages/umkm/DashboardUmkmPage.jsx';
 import ProfilUsahaPage from './pages/umkm/ProfilUsahaPage.jsx';
@@ -88,6 +89,7 @@ export function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterWizardPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       {/* Rute Bersama (Forum Komunitas - UMKM, Staf, Kabid) */}
       <Route

@@ -33,6 +33,19 @@ export const registerManual = asyncHandler(async (req, res) => {
   ok(res, result, 'UMKM berhasil didaftarkan secara manual oleh dinas', 201);
 });
 
+export const getDetail = asyncHandler(async (req, res) => {
+  const result = await service.getUmkmDetail(req.params.id);
+  ok(res, result, 'Detail profil usaha dan dokumen legalitas');
+});
+
+export const exportExcel = asyncHandler(async (req, res) => {
+  const buffer = await service.exportDirectoryExcel(req.query);
+  const filename = `Direktori_UMKM_Lebak_${Date.now()}.xlsx`;
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(buffer);
+});
+
 export const reapply = asyncHandler(async (req, res) => {
   const result = await service.reapplyAccount(req.businessId, req.user.id, req.ip);
   ok(res, result, 'Pengajuan ulang akun berhasil dikirim');

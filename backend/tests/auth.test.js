@@ -345,4 +345,62 @@ describe('PBI-06: Pendaftaran UMKM Manual & Ajukan Ulang Akun [Naila]', () => {
     assert.equal(meRes.body.data.status, 'menunggu_persetujuan');
     assert.equal(meRes.body.data.catatanStatus, null);
   });
+
+  it('AC-06-04 & AC-06-10: Staf melihat detail UMKM & mengekspor direktori ke Excel', async () => {
+    const staf = await makeUser({ email: 'staf-test-detail@diskop-lebak.go.id', role: 'staf', status: 'aktif' });
+    const stafAgent = request.agent(app);
+    await stafAgent.post(`${API}/auth/login`).send({
+      identifier: 'staf-test-detail@diskop-lebak.go.id',
+      password: 'Password123',
+    });
+
+    const umkmUser = await makeUser({ email: 'umkm-export@example.com', role: 'umkm', status: 'aktif' });
+    const biz = await BusinessProfile.create({
+      userId: umkmUser._id,
+      namaUsaha: 'Usaha Export Lebak',
+      kecamatan: 'Cibeber',
+      alamat: 'Jl. Raya Cibeber KM 5',
+      kategoriUtama: 'kriya_tenun',
+      waUsaha: '081234567891',
+      nib: '9876543210987',
+    });
+
+    const detailRes = await stafAgent.get(`${API}/umkm/${biz._id}`);
+    assert.equal(detailRes.status, 200);
+    assert.equal(detailRes.body.data.namaUsaha, 'Usaha Export Lebak');
+    assert.ok(Array.isArray(detailRes.body.data.documents));
+    assert.ok(Array.isArray(detailRes.body.data.products));
+
+    const exportRes = await stafAgent.get(`${API}/umkm/export`);
+    assert.equal(exportRes.status, 200);
+    assert.match(
+      exportRes.headers['content-type'],
+      /application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet/,
+    );
+  });
+
+  it('AC-06-06: Persetujuan akun gagal jika berkas NIB belum diunggah', async () => {
+    const staf = await makeUser({ email: 'staf-test-nib@diskop-lebak.go.id', role: 'staf', status: 'aktif' });
+    const stafAgent = request.agent(app);
+    await stafAgent.post(`${API}/auth/login`).send({
+      identifier: 'staf-test-nib@diskop-lebak.go.id',
+      password: 'Password123',
+    });
+
+    const umkmUser = await makeUser({ email: 'umkm-nonib@example.com', role: 'umkm', status: 'menunggu_persetujuan' });
+    const biz = await BusinessProfile.create({
+      userId: umkmUser._id,
+      namaUsaha: 'Usaha Tanpa Dokumen NIB',
+      kecamatan: 'Bayah',
+      alamat: 'Jl. Pantai Bayah No. 1',
+      kategoriUtama: 'olahan_pangan',
+      waUsaha: '081234567892',
+      nib: '1122334455667',
+    });
+
+    const res = await stafAgent.patch(`${API}/umkm/${biz._id}/persetujuan`).send({
+      keputusan: 'setuju',
+    });
+    assert.equal(res.status, 409);
+  });
 });

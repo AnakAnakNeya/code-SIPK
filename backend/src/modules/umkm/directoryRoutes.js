@@ -21,6 +21,12 @@ router.get('/', controller.listDirectory);
 // [PBI-06 - AC-06-03] Ringkasan jumlah binaan per 28 kecamatan Kabupaten Lebak
 router.get('/summary', controller.getSummary);
 
+// [PBI-06 - AC-06-10] Ekspor data direktori UMKM ke file spreadsheet Excel (.xlsx)
+router.get('/export', controller.exportExcel);
+
+// [PBI-06 - AC-06-04] Detail profil usaha, dokumen legalitas & produk untuk dinas
+router.get('/:id', controller.getDetail);
+
 // [PBI-06 - AC-06-06 s/d AC-06-08] Persetujuan / penolakan akun mandiri UMKM
 router.patch('/:id/persetujuan', controller.verifyAccount);
 

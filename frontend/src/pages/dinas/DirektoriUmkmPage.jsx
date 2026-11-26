@@ -22,6 +22,10 @@ import {
   Key,
   Copy,
   Check,
+  Download,
+  FileSpreadsheet,
+  AlertCircle,
+  Package,
 } from 'lucide-react';
 import api from '../../api/client.js';
 import { Card, CardHeader, CardContent } from '../../components/ui/Card.jsx';
@@ -38,12 +42,61 @@ export function DirektoriUmkmPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [kecamatanFilter, setKecamatanFilter] = useState('all');
 
-  const [activeVerify, setActiveVerify] = useState(null); // Modal verifikasi akun
+  const [activeVerify, setActiveVerify] = useState(null); // Modal verifikasi & detail akun (AC-06-04)
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailData, setDetailData] = useState(null);
+  const [detailTab, setDetailTab] = useState('profil');
   const [keputusan, setKeputusan] = useState('setuju');
   const [catatan, setCatatan] = useState('');
   const [verifying, setVerifying] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [msg, setMsg] = useState(null);
   const [err, setErr] = useState(null);
+
+  // Buka detail akun dan muat dokumen serta produk (AC-06-04)
+  const openDetail = async (u, defaultKeputusan = 'setuju') => {
+    setActiveVerify(u);
+    setKeputusan(defaultKeputusan);
+    setCatatan('');
+    setDetailTab('profil');
+    setDetailLoading(true);
+    try {
+      const res = await api.get(`/umkm/${u.id}`);
+      setDetailData(res.data);
+    } catch {
+      setDetailData(null);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  // Ekspor Data ke Excel .xlsx (AC-06-10)
+  const handleExportExcel = async () => {
+    setExporting(true);
+    setErr(null);
+    try {
+      const response = await api.get(
+        `/umkm/export?q=${encodeURIComponent(searchTerm)}&kecamatan=${kecamatanFilter}&statusAkun=${statusFilter}`,
+        { responseType: 'blob' },
+      );
+      const blob = new Blob([response.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Direktori_UMKM_Lebak_${Date.now()}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      setMsg('Data direktori binaan UMKM berhasil diekspor ke file Excel (.xlsx)');
+    } catch (e) {
+      setErr(e.message || 'Gagal mengekspor data ke Excel');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   // State Daftarkan UMKM Manual oleh Dinas (AC-06-09)
   const [showManualModal, setShowManualModal] = useState(false);
@@ -138,16 +191,27 @@ export function DirektoriUmkmPage() {
             Pencatatan legalitas izin, monitoring produk terkurasi, dan persetujuan pendaftaran mandiri.
           </p>
         </div>
-        <Button
-          onClick={() => {
-            setCreatedResult(null);
-            setShowManualModal(true);
-          }}
-          className="bg-navy-900 hover:bg-navy-800 text-white gap-2 font-bold shrink-0"
-        >
-          <UserPlus className="w-4 h-4" />
-          <span>Daftarkan UMKM Manual</span>
-        </Button>
+        <div className="flex items-center gap-2.5 shrink-0">
+          <Button
+            variant="outline"
+            onClick={handleExportExcel}
+            loading={exporting}
+            className="gap-2 font-bold border-slate-300 hover:bg-slate-50 text-slate-700"
+          >
+            <Download className="w-4 h-4 text-emerald-600" />
+            <span>Ekspor Excel (.xlsx)</span>
+          </Button>
+          <Button
+            onClick={() => {
+              setCreatedResult(null);
+              setShowManualModal(true);
+            }}
+            className="bg-navy-900 hover:bg-navy-800 text-white gap-2 font-bold"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Daftarkan UMKM Manual</span>
+          </Button>
+        </div>
       </div>
 
       {msg && <Alert type="success" onClose={() => setMsg(null)}>{msg}</Alert>}
@@ -262,11 +326,7 @@ export function DirektoriUmkmPage() {
                         <Button
                           variant="secondary"
                           size="sm"
-                          onClick={() => {
-                            setActiveVerify(u);
-                            setKeputusan('setuju');
-                            setCatatan('');
-                          }}
+                          onClick={() => openDetail(u, 'setuju')}
                           className="font-bold text-xs"
                         >
                           Periksa & Setujui
@@ -275,11 +335,7 @@ export function DirektoriUmkmPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => {
-                            setActiveVerify(u);
-                            setKeputusan('setuju');
-                            setCatatan('');
-                          }}
+                          onClick={() => openDetail(u, 'setuju')}
                           className="text-xs"
                         >
                           Detail Usaha
@@ -294,40 +350,222 @@ export function DirektoriUmkmPage() {
         </div>
       </Card>
 
-      {/* Modal Verifikasi Akun Baru (AC-06-06, AC-06-07) */}
+      {/* Modal Detail Usaha, Dokumen Legalitas & Persetujuan Akun (AC-06-04, AC-06-06, AC-06-07) */}
       {activeVerify && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <h3 className="text-lg font-bold text-navy-900">
-              Persetujuan Akun: {activeVerify.namaUsaha}
-            </h3>
-
-            <div className="p-3.5 bg-slate-50 rounded-xl space-y-2 text-xs">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Pemilik:</span>
-                <span className="font-bold text-navy-900">{activeVerify.user?.nama}</span>
+        <div className="fixed inset-0 z-50 bg-navy-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[92vh] flex flex-col">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-extrabold text-navy-900">
+                    {activeVerify.namaUsaha}
+                  </h3>
+                  <Badge status={activeVerify.user?.status} size="sm" />
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Kecamatan {activeVerify.kecamatan} &bull; NIB: <span className="font-mono font-bold text-navy-900">{activeVerify.nib}</span>
+                </p>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">13 Digit NIB OSS-RBA:</span>
-                <span className="font-mono font-bold text-navy-900">{activeVerify.nib}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Kecamatan:</span>
-                <span className="font-bold text-navy-900">{activeVerify.kecamatan}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Status Saat Ini:</span>
-                <Badge status={activeVerify.user?.status} size="sm" />
-              </div>
+              <button
+                type="button"
+                onClick={() => setActiveVerify(null)}
+                className="text-slate-400 hover:text-slate-600 text-xl font-bold"
+              >
+                &times;
+              </button>
             </div>
 
-            <div className="space-y-3">
+            {/* Navigasi Tab Detail (AC-06-04) */}
+            <div className="flex border-b border-slate-200 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setDetailTab('profil')}
+                className={`py-2 px-4 border-b-2 transition flex items-center gap-1.5 ${
+                  detailTab === 'profil'
+                    ? 'border-navy-900 text-navy-900'
+                    : 'border-transparent text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <Building2 className="w-3.5 h-3.5" />
+                <span>Profil & Kontak</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setDetailTab('dokumen')}
+                className={`py-2 px-4 border-b-2 transition flex items-center gap-1.5 ${
+                  detailTab === 'dokumen'
+                    ? 'border-navy-900 text-navy-900'
+                    : 'border-transparent text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Dokumen Izin ({detailData?.documents?.length || 0})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setDetailTab('produk')}
+                className={`py-2 px-4 border-b-2 transition flex items-center gap-1.5 ${
+                  detailTab === 'produk'
+                    ? 'border-navy-900 text-navy-900'
+                    : 'border-transparent text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <Package className="w-3.5 h-3.5" />
+                <span>Produk ({detailData?.products?.length || 0})</span>
+              </button>
+            </div>
+
+            {/* Konten Tab */}
+            <div className="flex-1 overflow-y-auto space-y-4 text-xs">
+              {detailLoading ? (
+                <div className="py-12 text-center text-slate-400">
+                  <div className="w-8 h-8 border-4 border-navy-900 border-t-amber-500 rounded-full animate-spin mx-auto mb-2" />
+                  <p>Memuat rincian berkas UMKM...</p>
+                </div>
+              ) : (
+                <>
+                  {/* TAB 1: PROFIL & KONTAK */}
+                  {detailTab === 'profil' && (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3 p-3.5 bg-slate-50 rounded-xl">
+                        <div>
+                          <span className="text-slate-400 block text-[11px]">Nama Pemilik</span>
+                          <span className="font-bold text-navy-900">{activeVerify.user?.nama || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[11px]">Alamat Email</span>
+                          <span className="font-mono font-medium text-slate-700">{activeVerify.user?.email || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[11px]">Nomor WhatsApp</span>
+                          <span className="font-medium text-slate-700">{activeVerify.waUsaha || activeVerify.user?.noHp || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[11px]">Tahun Mulai Berdiri</span>
+                          <span className="font-bold text-navy-900">{activeVerify.tahunMulai || '-'}</span>
+                        </div>
+                      </div>
+
+                      <div className="p-3.5 bg-slate-50 rounded-xl space-y-2">
+                        <div>
+                          <span className="text-slate-400 block text-[11px]">Alamat Sentra Usaha</span>
+                          <span className="font-medium text-slate-700 leading-relaxed">{activeVerify.alamat || '-'}</span>
+                        </div>
+                        <div className="flex gap-4 pt-1">
+                          <div>
+                            <span className="text-slate-400 block text-[11px]">Kategori</span>
+                            <span className="font-bold text-navy-900 capitalize">
+                              {activeVerify.kategoriUtama?.replace(/_/g, ' ')}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[11px]">Sub-Komoditas</span>
+                            <span className="font-medium text-slate-700">
+                              {Array.isArray(activeVerify.subKomoditas) ? activeVerify.subKomoditas.join(', ') : '-'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 2: DOKUMEN LEGALITAS */}
+                  {detailTab === 'dokumen' && (
+                    <div className="space-y-3">
+                      {!detailData?.documents?.some((d) => d.jenis === 'nib') && (
+                        <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 flex items-start gap-2">
+                          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="font-bold">Salinan Berkas NIB Belum Diunggah</p>
+                            <p className="text-[11px] text-amber-800 mt-0.5">
+                              Sesuai kriteria AC-06-06, staf dinas hanya dapat menyetujui akun setelah pelaku UMKM mengunggah salinan izin NIB resmi OSS-RBA.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {detailData?.documents?.length === 0 ? (
+                        <div className="py-8 text-center text-slate-400">
+                          <FileText className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                          <p>Belum ada berkas dokumen legalitas yang diunggah.</p>
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
+                          {detailData?.documents?.map((doc) => (
+                            <div key={doc.id} className="p-3 flex items-center justify-between hover:bg-slate-50 transition">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-navy-900 uppercase tracking-wide">
+                                    {doc.jenis.replace(/_/g, ' ')}
+                                  </span>
+                                  <Badge status={doc.statusVerifikasi} size="sm" />
+                                </div>
+                                <span className="text-[11px] text-slate-500 font-mono block mt-0.5">
+                                  {doc.nomor ? `No: ${doc.nomor}` : 'Nomor dokumen belum diisi'}
+                                </span>
+                              </div>
+                              {doc.file && (
+                                <a
+                                  href={`/api/v1/documents/${doc.id}/file`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-navy-900 bg-navy-50 hover:bg-navy-100 rounded-lg border border-navy-200 transition"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                  <span>Buka Berkas</span>
+                                </a>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* TAB 3: PRODUK */}
+                  {detailTab === 'produk' && (
+                    <div className="space-y-3">
+                      {detailData?.products?.length === 0 ? (
+                        <div className="py-8 text-center text-slate-400">
+                          <Package className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                          <p>Pelaku UMKM belum mendaftarkan produk.</p>
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
+                          {detailData?.products?.map((prod) => (
+                            <div key={prod.id} className="p-3 flex items-center justify-between hover:bg-slate-50 transition">
+                              <div>
+                                <span className="font-bold text-navy-900 block">{prod.nama}</span>
+                                <span className="text-[11px] text-slate-500">
+                                  Kapasitas: {prod.kapasitasBulanan} {prod.satuan}/bln &bull; Rp{prod.hargaAcuan?.toLocaleString('id-ID')}
+                                </span>
+                              </div>
+                              <div className="text-right">
+                                <Badge status={prod.statusKurasi} size="sm" />
+                                {prod.gradeKurasi && (
+                                  <span className="ml-1 text-[11px] font-extrabold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                                    Grade {prod.gradeKurasi}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Panel Tindakan Persetujuan Akun Dinas (AC-06-06, AC-06-07) */}
+            <div className="pt-3 border-t border-slate-200 space-y-3">
               <div>
-                <label className="block text-xs font-bold text-navy-900 mb-1">
-                  Keputusan Verifikator:
+                <label className="block text-xs font-bold text-navy-900 mb-1.5">
+                  Tindakan Verifikator Dinas:
                 </label>
                 <div className="flex gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer font-bold text-emerald-800 text-xs">
+                  <label className="flex items-center gap-2 cursor-pointer font-bold text-emerald-800 text-xs select-none">
                     <input
                       type="radio"
                       name="keputusan"
@@ -337,7 +575,7 @@ export function DirektoriUmkmPage() {
                     />
                     <span>Setujui Akun (Aktifkan)</span>
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer font-bold text-rose-800 text-xs">
+                  <label className="flex items-center gap-2 cursor-pointer font-bold text-rose-800 text-xs select-none">
                     <input
                       type="radio"
                       name="keputusan"
@@ -345,42 +583,47 @@ export function DirektoriUmkmPage() {
                       checked={keputusan === 'tolak'}
                       onChange={() => setKeputusan('tolak')}
                     />
-                    <span>Tolak Pengajuan</span>
+                    <span>Tolak Pengajuan (Minta Revisi)</span>
                   </label>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-navy-900 mb-1">
-                  Catatan Verifikasi (Wajib jika ditolak):
-                </label>
                 <textarea
                   rows={2}
                   placeholder={
                     keputusan === 'tolak'
-                      ? 'Tuliskan alasan penolakan agar UMKM dapat memperbaiki...'
-                      : 'Catatan opsional...'
+                      ? 'Wajib: Berikan catatan alasan penolakan agar UMKM dapat memperbaiki...'
+                      : 'Catatan opsional untuk persetujuan akun...'
                   }
                   value={catatan}
                   onChange={(e) => setCatatan(e.target.value)}
                   className="w-full p-2.5 text-xs rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-navy-900"
                 />
               </div>
-            </div>
 
-            <div className="pt-4 flex items-center justify-end gap-2 border-t border-slate-100">
-              <Button variant="outline" size="sm" onClick={() => setActiveVerify(null)}>
-                Batal
-              </Button>
-              <Button
-                variant={keputusan === 'setuju' ? 'primary' : 'danger'}
-                size="sm"
-                loading={verifying}
-                onClick={handleVerify}
-                className="font-bold"
-              >
-                {keputusan === 'setuju' ? 'Simpan & Aktifkan Akun' : 'Kirim Penolakan'}
-              </Button>
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-[11px] text-slate-400">
+                  {keputusan === 'setuju' && !detailData?.documents?.some((d) => d.jenis === 'nib') && (
+                    <span className="text-rose-600 font-semibold">*Dokumen NIB belum ada di sistem</span>
+                  )}
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setActiveVerify(null)}>
+                    Tutup
+                  </Button>
+                  <Button
+                    variant={keputusan === 'setuju' ? 'primary' : 'danger'}
+                    size="sm"
+                    loading={verifying}
+                    disabled={keputusan === 'setuju' && !detailData?.documents?.some((d) => d.jenis === 'nib')}
+                    onClick={handleVerify}
+                    className="font-bold"
+                  >
+                    {keputusan === 'setuju' ? 'Simpan & Aktifkan Akun' : 'Kirim Penolakan'}
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

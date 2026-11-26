@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
+import ExcelJS from 'exceljs';
 import BusinessProfile from '../../models/BusinessProfile.js';
 import User from '../../models/User.js';
 import LegalDocument from '../../models/LegalDocument.js';
@@ -271,4 +272,195 @@ export async function reapplyAccount(businessId, userId, ip) {
     status: user.status,
     message: 'Pengajuan ulang verifikasi akun berhasil dikirim ke dinas.',
   };
+}
+
+/**
+ * Detail Lengkap UMKM untuk Staf/Kabid (AC-06-04)
+ * Menampilkan data usaha, berkas legalitas, dan produk terdaftar.
+ */
+export async function getUmkmDetail(businessId) {
+  const profile = await BusinessProfile.findById(businessId).lean();
+  if (!profile) throw AppError.notFound('Profil usaha tidak ditemukan');
+
+  const [user, documents, products] = await Promise.all([
+    User.findById(profile.userId).select('nama email noHp status catatanStatus createdVia createdAt').lean(),
+    LegalDocument.find({ businessId: profile._id }).lean(),
+    Product.find({ businessId: profile._id }).lean(),
+  ]);
+
+  return {
+    ...profile,
+    id: String(profile._id),
+    user: user
+      ? {
+          id: String(user._id),
+          nama: user.nama,
+          email: user.email,
+          noHp: user.noHp,
+          status: user.status,
+          catatanStatus: user.catatanStatus,
+          createdVia: user.createdVia,
+          createdAt: user.createdAt,
+        }
+      : null,
+    documents: documents.map((d) => ({
+      id: String(d._id),
+      jenis: d.jenis,
+      nomor: d.nomor || null,
+      masaBerlaku: d.masaBerlaku || null,
+      masaSimpanBulan: d.masaSimpanBulan || null,
+      statusVerifikasi: d.statusVerifikasi,
+      catatan: d.catatan || null,
+      file: d.file
+        ? {
+            namaAsli: d.file.namaAsli,
+            mime: d.file.mime,
+            ukuran: d.file.ukuran,
+          }
+        : null,
+      verifiedAt: d.verifiedAt || null,
+    })),
+    products: products.map((p) => ({
+      id: String(p._id),
+      nama: p.nama,
+      kategori: p.kategori,
+      subKomoditas: p.subKomoditas,
+      satuan: p.satuan,
+      hargaAcuan: p.hargaAcuan,
+      kapasitasBulanan: p.kapasitasBulanan,
+      statusKurasi: p.statusKurasi,
+      gradeKurasi: p.gradeKurasi || null,
+    })),
+  };
+}
+
+/**
+ * Ekspor Direktori UMKM ke Format Excel .xlsx (AC-06-10)
+ * Mengikuti filter aktif: kecamatan, kategori, statusAkun, dan pencarian teks.
+ */
+export async function exportDirectoryExcel({ kecamatan, kategori, statusAkun, q }) {
+  const match = {};
+  if (kecamatan && kecamatan !== 'all') match.kecamatan = kecamatan;
+  if (kategori && kategori !== 'all') match.kategoriUtama = kategori;
+
+  if (q && q.trim()) {
+    const rx = new RegExp(q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    match.$or = [{ namaUsaha: rx }, { nib: rx }, { alamat: rx }];
+  }
+
+  const profiles = await BusinessProfile.find(match)
+    .populate('userId', 'nama email noHp status catatanStatus createdAt')
+    .sort({ createdAt: -1 })
+    .lean();
+
+  let filtered = profiles;
+  if (statusAkun && statusAkun !== 'all') {
+    filtered = profiles.filter((p) => p.userId?.status === statusAkun);
+  }
+
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'SIPK-Lebak (Dinas Koperasi & UKM Kab. Lebak)';
+  workbook.created = new Date();
+
+  const worksheet = workbook.addWorksheet('Direktori UMKM Lebak', {
+    views: [{ state: 'frozen', ySplit: 4 }],
+  });
+
+  // Judul Laporan Resmi Dinas
+  worksheet.mergeCells('A1:L1');
+  const titleCell = worksheet.getCell('A1');
+  titleCell.value = 'PEMERINTAH KABUPATEN LEBAK - DINAS KOPERASI DAN USAHA KECIL MENENGAH';
+  titleCell.font = { name: 'Arial', size: 12, bold: true, color: { argb: 'FF0F2A4F' } };
+  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+  worksheet.mergeCells('A2:L2');
+  const subTitleCell = worksheet.getCell('A2');
+  subTitleCell.value = `REKAPITULASI DATA BINAAN UMKM DAERAH (Diekspor: ${new Date().toLocaleDateString('id-ID', { dateStyle: 'long' })})`;
+  subTitleCell.font = { name: 'Arial', size: 10, italic: true, color: { argb: 'FF475569' } };
+  subTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+  worksheet.addRow([]); // Baris 3 spacer
+
+  // Header Table
+  const headers = [
+    'No',
+    'Nama Unit Usaha',
+    'NIB (13 Digit OSS-RBA)',
+    'Nama Pemilik',
+    'Email',
+    'No. WhatsApp Usaha',
+    'Kecamatan Sentra',
+    'Alamat Lengkap',
+    'Kategori Komoditas',
+    'Sub-Komoditas',
+    'Tahun Mulai',
+    'Status Akun Dinas',
+  ];
+
+  const headerRow = worksheet.addRow(headers);
+  headerRow.height = 24;
+  headerRow.eachCell((cell) => {
+    cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF0F2A4F' },
+    };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    cell.border = {
+      top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+      left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+      bottom: { style: 'medium', color: { argb: 'FF0F2A4F' } },
+      right: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+    };
+  });
+
+  // Data rows
+  filtered.forEach((p, index) => {
+    const row = worksheet.addRow([
+      index + 1,
+      p.namaUsaha,
+      p.nib,
+      p.userId?.nama || '-',
+      p.userId?.email || '-',
+      p.waUsaha || p.userId?.noHp || '-',
+      p.kecamatan,
+      p.alamat,
+      p.kategoriUtama === 'olahan_pangan' ? 'Olahan Pangan' : 'Kriya & Tenun',
+      Array.isArray(p.subKomoditas) ? p.subKomoditas.join(', ') : '-',
+      p.tahunMulai || '-',
+      p.userId?.status?.toUpperCase() || 'MENUNGGU_PERSETUJUAN',
+    ]);
+    row.height = 20;
+    row.eachCell((cell, colNumber) => {
+      cell.font = { name: 'Arial', size: 9 };
+      cell.alignment = {
+        vertical: 'middle',
+        horizontal: colNumber === 1 || colNumber === 3 || colNumber === 11 || colNumber === 12 ? 'center' : 'left',
+      };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+        left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+        bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+        right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+      };
+    });
+  });
+
+  worksheet.columns = [
+    { width: 6 },
+    { width: 28 },
+    { width: 22 },
+    { width: 22 },
+    { width: 24 },
+    { width: 18 },
+    { width: 18 },
+    { width: 35 },
+    { width: 18 },
+    { width: 25 },
+    { width: 14 },
+    { width: 22 },
+  ];
+
+  return workbook.xlsx.writeBuffer();
 }
