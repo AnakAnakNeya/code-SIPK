@@ -32,7 +32,21 @@ import { Card, CardHeader, CardContent } from '../../components/ui/Card.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Alert } from '../../components/ui/Alert.jsx';
+import { CustomSelect } from '../../components/ui/CustomSelect.jsx';
 import { KECAMATAN } from '../../constants/kecamatan.js';
+
+const STATUS_OPTIONS = [
+  { value: 'all', label: 'Semua Status Akun' },
+  { value: 'menunggu_persetujuan', label: 'Menunggu Persetujuan' },
+  { value: 'aktif', label: 'Aktif' },
+  { value: 'ditolak', label: 'Ditolak' },
+  { value: 'nonaktif', label: 'Nonaktif' },
+];
+
+const KECAMATAN_FILTER_OPTIONS = [
+  { value: 'all', label: 'Semua Kecamatan (28 Wilayah)' },
+  ...KECAMATAN.map((k) => ({ value: k, label: `Kec. ${k}` })),
+];
 
 export function DirektoriUmkmPage() {
   const [items, setItems] = useState([]);
@@ -262,35 +276,22 @@ export function DirektoriUmkmPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <div className="relative min-w-[150px]">
-            <select
+          <div className="min-w-[170px]">
+            <CustomSelect
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full h-10 pl-3 pr-8 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-700 appearance-none hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-navy-900/15 focus:border-navy-900 cursor-pointer transition"
-            >
-              <option value="all">Semua Status Akun</option>
-              <option value="menunggu_persetujuan">Menunggu Persetujuan</option>
-              <option value="aktif">Aktif</option>
-              <option value="ditolak">Ditolak</option>
-              <option value="nonaktif">Nonaktif</option>
-            </select>
-            <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              onChange={(val) => setStatusFilter(val)}
+              options={STATUS_OPTIONS}
+              placeholder="Semua Status Akun"
+            />
           </div>
 
-          <div className="relative min-w-[180px]">
-            <select
+          <div className="min-w-[210px]">
+            <CustomSelect
               value={kecamatanFilter}
-              onChange={(e) => setKecamatanFilter(e.target.value)}
-              className="w-full h-10 pl-3 pr-8 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-700 appearance-none hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-navy-900/15 focus:border-navy-900 cursor-pointer transition"
-            >
-              <option value="all">Semua Kecamatan (28 Wilayah)</option>
-              {KECAMATAN.map((k) => (
-                <option key={k} value={k}>
-                  Kec. {k}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              onChange={(val) => setKecamatanFilter(val)}
+              options={KECAMATAN_FILTER_OPTIONS}
+              placeholder="Semua Kecamatan (28 Wilayah)"
+            />
           </div>
 
           {(searchTerm || statusFilter !== 'all' || kecamatanFilter !== 'all') && (

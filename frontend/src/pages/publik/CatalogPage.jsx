@@ -28,7 +28,25 @@ import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Card } from '../../components/ui/Card.jsx';
 import { Modal } from '../../components/Modal.jsx';
+import { CustomSelect } from '../../components/ui/CustomSelect.jsx';
 import { KECAMATAN } from '../../constants/kecamatan.js';
+
+const KATEGORI_OPTIONS = [
+  { value: '', label: 'Semua Kategori Komoditas' },
+  { value: 'olahan_pangan', label: 'Olahan Pangan & Minuman' },
+  { value: 'kriya_tenun', label: 'Kriya Tradisional & Tenun' },
+];
+
+const KECAMATAN_OPTIONS = [
+  { value: '', label: 'Semua Kecamatan (28 Wilayah)' },
+  ...KECAMATAN.map((kec) => ({ value: kec, label: `Kecamatan ${kec}` })),
+];
+
+const SORT_OPTIONS = [
+  { value: 'terbaru', label: 'Terbaru Ditambahkan' },
+  { value: 'harga_asc', label: 'Harga: Rendah ke Tinggi' },
+  { value: 'harga_desc', label: 'Harga: Tinggi ke Rendah' },
+];
 
 const DUMMY_PRODUCTS = [
   {
@@ -208,63 +226,30 @@ export function CatalogPage() {
         </div>
 
         {/* Baris 2: Dropdown Filter Bersebelahan Secara Proporsional */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 items-end">
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Kategori Komoditas
-            </label>
-            <div className="relative">
-              <select
-                value={selectedKategori}
-                onChange={(e) => setSelectedKategori(e.target.value)}
-                className="w-full h-10 pl-3.5 pr-9 text-xs font-medium rounded-xl border border-slate-200 bg-white text-slate-700 appearance-none hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-navy-900/15 focus:border-navy-900 cursor-pointer transition"
-              >
-                <option value="">Semua Kategori</option>
-                <option value="olahan_pangan">Olahan Pangan & Minuman</option>
-                <option value="kriya_tenun">Kriya Tradisional & Tenun</option>
-              </select>
-              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 items-end">
+          <CustomSelect
+            label="Kategori Komoditas"
+            value={selectedKategori}
+            onChange={(val) => setSelectedKategori(val)}
+            options={KATEGORI_OPTIONS}
+            placeholder="Semua Kategori Komoditas"
+          />
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Kecamatan (28 Wilayah)
-            </label>
-            <div className="relative">
-              <select
-                value={selectedKecamatan}
-                onChange={(e) => setSelectedKecamatan(e.target.value)}
-                className="w-full h-10 pl-3.5 pr-9 text-xs font-medium rounded-xl border border-slate-200 bg-white text-slate-700 appearance-none hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-navy-900/15 focus:border-navy-900 cursor-pointer transition"
-              >
-                <option value="">Semua Kecamatan (28 Wilayah)</option>
-                {KECAMATAN.map((kec) => (
-                  <option key={kec} value={kec}>
-                    Kecamatan {kec}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
-          </div>
+          <CustomSelect
+            label="Kecamatan Sentra Usaha"
+            value={selectedKecamatan}
+            onChange={(val) => setSelectedKecamatan(val)}
+            options={KECAMATAN_OPTIONS}
+            placeholder="Semua Kecamatan (28 Wilayah)"
+          />
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Urutkan Harga
-            </label>
-            <div className="relative">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="w-full h-10 pl-3.5 pr-9 text-xs font-medium rounded-xl border border-slate-200 bg-white text-slate-700 appearance-none hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-navy-900/15 focus:border-navy-900 cursor-pointer transition"
-              >
-                <option value="terbaru">Terbaru Ditambahkan</option>
-                <option value="harga_asc">Harga: Rendah ke Tinggi</option>
-                <option value="harga_desc">Harga: Tinggi ke Rendah</option>
-              </select>
-              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
-          </div>
+          <CustomSelect
+            label="Urutkan Harga"
+            value={sortBy}
+            onChange={(val) => setSortBy(val)}
+            options={SORT_OPTIONS}
+            placeholder="Terbaru Ditambahkan"
+          />
         </div>
 
         {/* Baris 3: Active Filter Chips & Counter Hasil */}
