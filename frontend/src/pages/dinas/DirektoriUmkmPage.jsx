@@ -238,42 +238,74 @@ export function DirektoriUmkmPage() {
         </div>
       </Card>
 
-      {/* Filter Bar & Pencarian */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+      {/* Filter Bar & Pencarian (Rapi & Responsif) */}
+      <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
-            placeholder="Cari nama usaha, NIB, atau alamat..."
+            placeholder="Cari nama usaha, nomor NIB, atau alamat sentra..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-xs rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-navy-900"
+            className="w-full h-10 pl-10 pr-9 text-xs rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-white focus:bg-white transition focus:outline-none focus:ring-2 focus:ring-navy-900/15 focus:border-navy-900"
           />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full hover:bg-slate-100 transition"
+            >
+              <Check className="w-3.5 h-3.5 hidden" />
+              &times;
+            </button>
+          )}
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="text-xs font-semibold py-2 px-3 rounded-lg border border-slate-300 bg-white text-slate-700"
-          >
-            <option value="all">Semua Status Akun</option>
-            <option value="menunggu_persetujuan">Menunggu Persetujuan</option>
-            <option value="aktif">Aktif</option>
-            <option value="ditolak">Ditolak</option>
-            <option value="nonaktif">Nonaktif</option>
-          </select>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="relative min-w-[150px]">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full h-10 pl-3 pr-8 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-700 appearance-none hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-navy-900/15 focus:border-navy-900 cursor-pointer transition"
+            >
+              <option value="all">Semua Status Akun</option>
+              <option value="menunggu_persetujuan">Menunggu Persetujuan</option>
+              <option value="aktif">Aktif</option>
+              <option value="ditolak">Ditolak</option>
+              <option value="nonaktif">Nonaktif</option>
+            </select>
+            <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
 
-          <select
-            value={kecamatanFilter}
-            onChange={(e) => setKecamatanFilter(e.target.value)}
-            className="text-xs font-semibold py-2 px-3 rounded-lg border border-slate-300 bg-white text-slate-700"
-          >
-            <option value="all">Semua Kecamatan</option>
-            {KECAMATAN.map((k) => (
-              <option key={k} value={k}>{k}</option>
-            ))}
-          </select>
+          <div className="relative min-w-[180px]">
+            <select
+              value={kecamatanFilter}
+              onChange={(e) => setKecamatanFilter(e.target.value)}
+              className="w-full h-10 pl-3 pr-8 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-700 appearance-none hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-navy-900/15 focus:border-navy-900 cursor-pointer transition"
+            >
+              <option value="all">Semua Kecamatan (28 Wilayah)</option>
+              {KECAMATAN.map((k) => (
+                <option key={k} value={k}>
+                  Kec. {k}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+
+          {(searchTerm || statusFilter !== 'all' || kecamatanFilter !== 'all') && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchTerm('');
+                setStatusFilter('all');
+                setKecamatanFilter('all');
+              }}
+              className="h-10 px-3 text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 rounded-xl transition border border-rose-200"
+            >
+              Reset
+            </button>
+          )}
         </div>
       </div>
 

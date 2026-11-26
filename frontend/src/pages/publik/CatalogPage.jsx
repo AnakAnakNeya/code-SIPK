@@ -16,6 +16,10 @@ import {
   ExternalLink,
   Package,
   Download,
+  ChevronDown,
+  RotateCcw,
+  X,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { AppLayout } from '../../layouts/AppLayout.jsx';
@@ -130,18 +134,33 @@ export function CatalogPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedKecamatan, setSelectedKecamatan] = useState('');
   const [selectedKategori, setSelectedKategori] = useState('');
+  const [sortBy, setSortBy] = useState('terbaru');
   const [activeModalProduct, setActiveModalProduct] = useState(null);
 
-  const filteredProducts = DUMMY_PRODUCTS.filter((prod) => {
-    const matchesSearch =
-      !searchTerm ||
-      prod.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      prod.subKomoditas.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      prod.namaUsaha.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesKec = !selectedKecamatan || prod.kecamatan === selectedKecamatan;
-    const matchesKat = !selectedKategori || prod.kategori === selectedKategori;
-    return matchesSearch && matchesKec && matchesKat;
-  });
+  const hasActiveFilter = Boolean(searchTerm || selectedKecamatan || selectedKategori || sortBy !== 'terbaru');
+  const handleResetFilter = () => {
+    setSearchTerm('');
+    setSelectedKecamatan('');
+    setSelectedKategori('');
+    setSortBy('terbaru');
+  };
+
+  const filteredProducts = DUMMY_PRODUCTS
+    .filter((prod) => {
+      const matchesSearch =
+        !searchTerm ||
+        prod.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        prod.subKomoditas.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        prod.namaUsaha.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesKec = !selectedKecamatan || prod.kecamatan === selectedKecamatan;
+      const matchesKat = !selectedKategori || prod.kategori === selectedKategori;
+      return matchesSearch && matchesKec && matchesKat;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'harga_asc') return a.hargaAcuan - b.hargaAcuan;
+      if (sortBy === 'harga_desc') return b.hargaAcuan - a.hargaAcuan;
+      return 0; // terbaru
+    });
 
   const content = (
     <div className="space-y-6">
@@ -165,66 +184,147 @@ export function CatalogPage() {
         </button>
       </div>
 
-      {/* Filter Bar (Sesuai Desain Stitch) */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+      {/* Filter Bar (Modern, Rapi & Responsif) */}
+      <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm space-y-4">
+        {/* Baris 1: Pencarian Utama */}
+        <div className="relative">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Cari nama produk, sub-komoditas, atau nama unit usaha UMKM..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full h-11 pl-10 pr-10 text-xs rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-white focus:bg-white transition focus:outline-none focus:ring-2 focus:ring-navy-900/15 focus:border-navy-900 placeholder:text-slate-400"
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Baris 2: Dropdown Filter Bersebelahan Secara Proporsional */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 items-end">
           <div>
-            <label className="block text-[11px] uppercase font-bold tracking-wider text-slate-500 mb-1.5">
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
               Kategori Komoditas
             </label>
-            <select
-              value={selectedKategori}
-              onChange={(e) => setSelectedKategori(e.target.value)}
-              className="w-full h-10 px-3 text-xs border border-slate-200 rounded-lg outline-none focus:border-navy-900 bg-white"
-            >
-              <option value="">Semua Kategori</option>
-              <option value="olahan_pangan">Olahan Pangan & Minuman</option>
-              <option value="kriya_tenun">Kriya Tradisional & Tenun</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[11px] uppercase font-bold tracking-wider text-slate-500 mb-1.5">
-              Kecamatan (28 Wilayah)
-            </label>
-            <select
-              value={selectedKecamatan}
-              onChange={(e) => setSelectedKecamatan(e.target.value)}
-              className="w-full h-10 px-3 text-xs border border-slate-200 rounded-lg outline-none focus:border-navy-900 bg-white"
-            >
-              <option value="">Semua Kecamatan (28 Wilayah)</option>
-              {KECAMATAN.map((kec) => (
-                <option key={kec} value={kec}>
-                  {kec}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[11px] uppercase font-bold tracking-wider text-slate-500 mb-1.5">
-              Pencarian
-            </label>
             <div className="relative">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-              <input
-                type="text"
-                placeholder="Nama produk / UMKM..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-10 pl-9 pr-3 text-xs border border-slate-200 rounded-lg outline-none focus:border-navy-900"
-              />
+              <select
+                value={selectedKategori}
+                onChange={(e) => setSelectedKategori(e.target.value)}
+                className="w-full h-10 pl-3.5 pr-9 text-xs font-medium rounded-xl border border-slate-200 bg-white text-slate-700 appearance-none hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-navy-900/15 focus:border-navy-900 cursor-pointer transition"
+              >
+                <option value="">Semua Kategori</option>
+                <option value="olahan_pangan">Olahan Pangan & Minuman</option>
+                <option value="kriya_tenun">Kriya Tradisional & Tenun</option>
+              </select>
+              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           </div>
 
           <div>
-            <button
-              onClick={() => {}}
-              className="w-full h-10 bg-navy-900 hover:bg-[#1E3A8A] text-white text-xs font-semibold rounded-lg transition"
-            >
-              Terapkan Filter
-            </button>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              Kecamatan (28 Wilayah)
+            </label>
+            <div className="relative">
+              <select
+                value={selectedKecamatan}
+                onChange={(e) => setSelectedKecamatan(e.target.value)}
+                className="w-full h-10 pl-3.5 pr-9 text-xs font-medium rounded-xl border border-slate-200 bg-white text-slate-700 appearance-none hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-navy-900/15 focus:border-navy-900 cursor-pointer transition"
+              >
+                <option value="">Semua Kecamatan (28 Wilayah)</option>
+                {KECAMATAN.map((kec) => (
+                  <option key={kec} value={kec}>
+                    Kecamatan {kec}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
           </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              Urutkan Harga
+            </label>
+            <div className="relative">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full h-10 pl-3.5 pr-9 text-xs font-medium rounded-xl border border-slate-200 bg-white text-slate-700 appearance-none hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-navy-900/15 focus:border-navy-900 cursor-pointer transition"
+              >
+                <option value="terbaru">Terbaru Ditambahkan</option>
+                <option value="harga_asc">Harga: Rendah ke Tinggi</option>
+                <option value="harga_desc">Harga: Tinggi ke Rendah</option>
+              </select>
+              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+          </div>
+        </div>
+
+        {/* Baris 3: Active Filter Chips & Counter Hasil */}
+        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-slate-400 text-[11px] font-semibold">Filter aktif:</span>
+            {!hasActiveFilter && (
+              <span className="text-slate-400 italic text-[11px]">Semua komoditas ditampilkan</span>
+            )}
+            {selectedKategori && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-navy-50 text-navy-900 font-semibold border border-navy-200/80">
+                <span>{selectedKategori === 'olahan_pangan' ? 'Olahan Pangan' : 'Kriya & Tenun'}</span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedKategori('')}
+                  className="hover:text-rose-600 ml-0.5"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {selectedKecamatan && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-navy-50 text-navy-900 font-semibold border border-navy-200/80">
+                <span>Kec. {selectedKecamatan}</span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedKecamatan('')}
+                  className="hover:text-rose-600 ml-0.5"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {searchTerm && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-navy-50 text-navy-900 font-semibold border border-navy-200/80">
+                <span>"{searchTerm}"</span>
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  className="hover:text-rose-600 ml-0.5"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {hasActiveFilter && (
+              <button
+                type="button"
+                onClick={handleResetFilter}
+                className="text-[11px] text-rose-600 hover:text-rose-800 font-semibold inline-flex items-center gap-1 ml-1"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Reset</span>
+              </button>
+            )}
+          </div>
+
+          <span className="font-semibold text-slate-500 text-[11px]">
+            Menampilkan <strong className="text-navy-900 font-extrabold">{filteredProducts.length}</strong> produk terkurasi
+          </span>
         </div>
       </div>
 

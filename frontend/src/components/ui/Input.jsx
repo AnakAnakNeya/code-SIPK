@@ -1,4 +1,5 @@
 import React from 'react';
+import { ChevronDown } from 'lucide-react';
 
 export function Input({
   label,
@@ -57,23 +58,26 @@ export function Select({
           {label} {required && <span className="text-rose-500">*</span>}
         </label>
       )}
-      <select
-        id={selectId}
-        required={required}
-        className={`w-full px-3.5 py-2.5 text-sm rounded-lg border bg-white text-slate-900 transition-colors focus:outline-none focus:ring-2 focus:ring-navy-900 focus:border-navy-900 ${
-          error
-            ? 'border-rose-400 focus:ring-rose-400 focus:border-rose-400'
-            : 'border-slate-300 hover:border-slate-400'
-        }`}
-        {...props}
-      >
-        {options.map((opt) => (
-          <option key={opt.value ?? opt} value={opt.value ?? opt}>
-            {opt.label ?? opt}
-          </option>
-        ))}
-        {children}
-      </select>
+      <div className="relative">
+        <select
+          id={selectId}
+          required={required}
+          className={`w-full appearance-none pl-3.5 pr-10 py-2.5 text-sm rounded-lg border bg-white text-slate-900 transition-colors focus:outline-none focus:ring-2 focus:ring-navy-900 focus:border-navy-900 cursor-pointer ${
+            error
+              ? 'border-rose-400 focus:ring-rose-400 focus:border-rose-400'
+              : 'border-slate-300 hover:border-slate-400'
+          }`}
+          {...props}
+        >
+          {options.map((opt) => (
+            <option key={opt.value ?? opt} value={opt.value ?? opt}>
+              {opt.label ?? opt}
+            </option>
+          ))}
+          {children}
+        </select>
+        <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+      </div>
       {error ? (
         <p className="mt-1.5 text-xs text-rose-600 font-medium">{error}</p>
       ) : helperText ? (
