@@ -7,6 +7,8 @@ const VARIANTS = {
     'bg-lebak-gold text-white hover:bg-amber-600 focus:ring-amber-400 shadow-sm disabled:bg-slate-300 disabled:text-slate-500',
   outline:
     'bg-white text-navy-900 border border-slate-300 hover:bg-slate-50 focus:ring-navy-500 disabled:bg-slate-100 disabled:text-slate-400',
+  'outline-white':
+    'bg-transparent text-white border border-white/30 hover:bg-white/10 hover:border-white/50 focus:ring-white/50 disabled:border-white/10 disabled:text-white/40',
   ghost:
     'text-slate-700 hover:bg-slate-100 focus:ring-slate-400 disabled:text-slate-400',
   danger:

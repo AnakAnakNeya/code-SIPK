@@ -49,16 +49,18 @@ export function EventPublikPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Link to="/katalog">
-              <Button variant="outline" className="text-white border-white/20 hover:bg-white/10 text-xs">
-                Katalog Produk
-              </Button>
+          <div className="flex items-center gap-3 shrink-0">
+            <Link
+              to="/katalog"
+              className="inline-flex items-center justify-center font-semibold transition-all duration-150 px-4 py-2 text-xs rounded-lg border border-white/30 text-white hover:bg-white/10 hover:border-white/50 whitespace-nowrap shadow-xs"
+            >
+              Katalog Produk
             </Link>
-            <Link to="/login">
-              <Button variant="primary" className="text-xs">
-                Masuk / Daftar Akun
-              </Button>
+            <Link
+              to="/login"
+              className="inline-flex items-center justify-center font-bold transition-all duration-150 px-4 py-2 text-xs rounded-lg bg-amber-500 hover:bg-amber-400 text-navy-950 shadow-xs whitespace-nowrap"
+            >
+              Masuk / Daftar Akun
             </Link>
           </div>
         </div>
