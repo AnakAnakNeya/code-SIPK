@@ -237,18 +237,53 @@ export function DirektoriUmkmPage() {
           <span className="text-xs font-bold text-navy-900 uppercase">
             Ringkasan Sebaran Usaha Binaan (28 Kecamatan Lebak)
           </span>
+          <span className="text-[11px] text-slate-400">
+            Klik kecamatan untuk menyaring tabel
+          </span>
         </div>
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
-          {summary.slice(0, 10).map((s) => (
-            <div
-              key={s.kecamatan}
-              className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 shrink-0 text-center min-w-[90px]"
-            >
-              <span className="text-xs font-bold text-navy-900 block truncate">{s.kecamatan}</span>
-              <span className="text-sm font-extrabold text-amber-600 font-mono">{s.total}</span>
-              <span className="text-[10px] text-slate-400 block">UMKM</span>
-            </div>
-          ))}
+          {[...summary]
+            .sort((a, b) => b.total - a.total || a.kecamatan.localeCompare(b.kecamatan))
+            .map((s) => (
+              <button
+                key={s.kecamatan}
+                type="button"
+                onClick={() => setKecamatanFilter(kecamatanFilter === s.kecamatan ? 'all' : s.kecamatan)}
+                className={`px-3 py-2 rounded-xl border shrink-0 text-center min-w-[95px] transition cursor-pointer ${
+                  kecamatanFilter === s.kecamatan
+                    ? 'bg-navy-900 border-navy-900 text-white shadow-xs'
+                    : s.total > 0
+                    ? 'bg-amber-50/70 border-amber-200 hover:border-amber-400'
+                    : 'bg-slate-50 border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <span
+                  className={`text-xs font-bold block truncate ${
+                    kecamatanFilter === s.kecamatan ? 'text-white' : 'text-navy-900'
+                  }`}
+                >
+                  {s.kecamatan}
+                </span>
+                <span
+                  className={`text-sm font-extrabold font-mono ${
+                    kecamatanFilter === s.kecamatan
+                      ? 'text-amber-300'
+                      : s.total > 0
+                      ? 'text-amber-600'
+                      : 'text-slate-400'
+                  }`}
+                >
+                  {s.total}
+                </span>
+                <span
+                  className={`text-[10px] block ${
+                    kecamatanFilter === s.kecamatan ? 'text-slate-200' : 'text-slate-400'
+                  }`}
+                >
+                  UMKM
+                </span>
+              </button>
+            ))}
         </div>
       </Card>
 
@@ -385,7 +420,7 @@ export function DirektoriUmkmPage() {
 
       {/* Modal Detail Usaha, Dokumen Legalitas & Persetujuan Akun (AC-06-04, AC-06-06, AC-06-07) */}
       {activeVerify && (
-        <div className="fixed inset-0 z-50 bg-navy-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 !mt-0 bg-navy-950/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[92vh] flex flex-col">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
@@ -664,7 +699,7 @@ export function DirektoriUmkmPage() {
 
       {/* Modal Pendaftaran UMKM Manual oleh Dinas (AC-06-09) */}
       {showManualModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-950/60 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 !mt-0 flex items-center justify-center p-4 bg-navy-950/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
             {createdResult ? (
               <div className="space-y-4">

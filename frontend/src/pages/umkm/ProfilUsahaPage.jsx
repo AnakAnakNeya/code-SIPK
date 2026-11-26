@@ -25,7 +25,10 @@ import { Input, Select } from '../../components/ui/Input.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Alert } from '../../components/ui/Alert.jsx';
+import { CustomSelect } from '../../components/ui/CustomSelect.jsx';
 import { KECAMATAN } from '../../constants/kecamatan.js';
+
+const KECAMATAN_OPTIONS = KECAMATAN.map((k) => ({ value: k, label: k }));
 
 export function ProfilUsahaPage() {
   const { user, refreshUser } = useAuth();
@@ -239,18 +242,13 @@ export function ProfilUsahaPage() {
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Select
+                  <CustomSelect
                     label="Kecamatan Sentra"
-                    required
                     value={profile.kecamatan}
-                    onChange={(e) => setProfile({ ...profile, kecamatan: e.target.value })}
-                  >
-                    {KECAMATAN.map((k) => (
-                      <option key={k} value={k}>
-                        {k}
-                      </option>
-                    ))}
-                  </Select>
+                    onChange={(val) => setProfile({ ...profile, kecamatan: val })}
+                    options={KECAMATAN_OPTIONS}
+                    placeholder="Pilih kecamatan..."
+                  />
 
                   <Input
                     label="Tahun Mulai Beroperasi"
@@ -312,12 +310,12 @@ export function ProfilUsahaPage() {
                     className="p-3.5 rounded-xl border border-slate-200 bg-white flex items-center justify-between gap-3 hover:border-slate-300 transition"
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-navy-900 truncate">
+                      <div className="flex items-baseline gap-1.5 flex-wrap">
+                        <span className="text-xs font-bold text-navy-900 leading-snug">
                           {item.label}
                         </span>
                         {item.wajib && (
-                          <span className="text-[10px] text-rose-500 font-semibold">*wajib</span>
+                          <span className="text-[10px] text-rose-500 font-semibold shrink-0">*wajib</span>
                         )}
                       </div>
 

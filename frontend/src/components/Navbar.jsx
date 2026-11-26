@@ -67,7 +67,7 @@ export function Navbar({ user, sidebarOpen, setSidebarOpen }) {
 
       {/* Identitas pengguna */}
       <div className="flex items-center gap-3 ml-auto">
-        <span className="hidden sm:inline-block text-xs font-medium text-slate-600 border border-slate-200 rounded-md px-3 py-1.5 bg-white">
+        <span className="hidden sm:inline-block text-xs font-medium text-slate-600 border border-slate-200 rounded-md px-3 py-1.5 bg-white whitespace-nowrap shrink-0">
           {ROLE_LABEL[user?.role] || user?.role}
         </span>
         <div className="w-9 h-9 rounded-full bg-navy-900 text-white text-xs font-bold flex items-center justify-center">
