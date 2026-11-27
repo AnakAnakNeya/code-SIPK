@@ -1,9 +1,30 @@
 import fs from 'node:fs/promises';
+import mongoose from 'mongoose';
+import { JENIS_DOKUMEN } from '../../constants/enums.js';
 import { LegalDocument } from '../../models/LegalDocument.js';
 import { BusinessProfile } from '../../models/BusinessProfile.js';
+import { KurasiSubmission } from '../../models/KurasiSubmission.js';
 import { AppError } from '../../utils/AppError.js';
 import { auditLog } from '../../utils/auditLog.js';
 import { documentDto } from '../../utils/dto.js';
+
+function assertObjectId(id) {
+  if (!mongoose.isValidObjectId(id)) {
+    throw AppError.notFound('Dokumen tidak ditemukan');
+  }
+}
+
+// AC-02-06: dokumen terkunci selama kurasi berstatus menunggu_approval
+async function assertNotLocked(businessId) {
+  const locked = await KurasiSubmission.exists({ businessId, status: 'menunggu_approval' });
+  if (locked) {
+    throw new AppError(
+      409,
+      'DOC_LOCKED',
+      'Dokumen tidak dapat diubah karena pengajuan kurasi sedang menunggu persetujuan Kabid.',
+    );
+  }
+}
 
 export function getRequiredDocs(kategori) {
   return kategori === 'kriya_tenun'
@@ -18,7 +39,9 @@ export async function summaryForBusiness(businessId) {
   }
 
   const docs = await LegalDocument.find({ businessId }).lean();
-  const perJenis = {};
+
+  // Kontrak PRD: jenis yang belum diunggah bernilai 'belum_ada'
+  const perJenis = Object.fromEntries(JENIS_DOKUMEN.map((j) => [j, 'belum_ada']));
   for (const doc of docs) {
     perJenis[doc.jenis] = doc.statusVerifikasi;
   }
@@ -40,6 +63,7 @@ export async function listDocumentsForBusiness(businessId) {
 }
 
 export async function getDocumentById(docId) {
+  assertObjectId(docId);
   const doc = await LegalDocument.findById(docId);
   if (!doc) throw AppError.notFound('Dokumen tidak ditemukan');
   return doc;
@@ -55,9 +79,11 @@ export async function saveDocument({
   file,
   ip,
 }) {
+  await assertNotLocked(businessId);
+
   const existing = await LegalDocument.findOne({ businessId, jenis });
 
-  // Update or insert (AC-02-05: reset status ke belum_diperiksa)
+  // Upsert (AC-02-05: reset status ke belum_diperiksa)
   const doc = await LegalDocument.findOneAndUpdate(
     { businessId, jenis },
     {
@@ -74,12 +100,12 @@ export async function saveDocument({
     { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true },
   );
 
-  // Jika ada file lama yang berbeda, hapus dari disk
+  // Hapus file lama dari disk setelah database berhasil diperbarui
   if (existing && existing.file?.path && existing.file.path !== file.path) {
     try {
       await fs.unlink(existing.file.path);
     } catch {
-      // file might not exist or already removed
+      // file mungkin sudah tidak ada
     }
   }
 
@@ -96,6 +122,7 @@ export async function saveDocument({
 }
 
 export async function verifyDocument({ docId, actorId, ip, status, catatan }) {
+  assertObjectId(docId);
   const doc = await LegalDocument.findById(docId);
   if (!doc) throw AppError.notFound('Dokumen tidak ditemukan');
 
@@ -118,6 +145,7 @@ export async function verifyDocument({ docId, actorId, ip, status, catatan }) {
 }
 
 export async function deleteDocument({ docId, businessId, userId, ip }) {
+  assertObjectId(docId);
   const doc = await LegalDocument.findOne({ _id: docId, businessId });
   if (!doc) throw AppError.notFound('Dokumen tidak ditemukan');
 
@@ -125,13 +153,15 @@ export async function deleteDocument({ docId, businessId, userId, ip }) {
     throw AppError.forbidden('Dokumen NIB tidak dapat dihapus');
   }
 
+  await assertNotLocked(businessId);
+
   await LegalDocument.findByIdAndDelete(docId);
 
   if (doc.file?.path) {
     try {
       await fs.unlink(doc.file.path);
     } catch {
-      // ignore
+      // abaikan
     }
   }
 

@@ -1,6 +1,12 @@
 import { z } from 'zod';
 import { JENIS_DOKUMEN } from '../../constants/enums.js';
 
+function startOfToday() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 export const uploadDocumentSchema = z
   .object({
     jenis: z.enum(JENIS_DOKUMEN),
@@ -9,9 +15,10 @@ export const uploadDocumentSchema = z
       .string()
       .optional()
       .transform((val) => (val ? new Date(val) : undefined))
+      .refine((date) => !date || !isNaN(date.getTime()), 'Format tanggal masa berlaku tidak valid')
       .refine(
-        (date) => !date || !isNaN(date.getTime()),
-        'Format tanggal masa berlaku tidak valid',
+        (date) => !date || isNaN(date.getTime()) || date >= startOfToday(),
+        'Masa berlaku tidak boleh sudah lewat',
       ),
     masaSimpanBulan: z
       .union([z.string(), z.number()])
@@ -19,7 +26,7 @@ export const uploadDocumentSchema = z
       .transform((val) => (val !== undefined && val !== '' ? Number(val) : undefined)),
   })
   .superRefine((data, ctx) => {
-    // Validasi nomor per jenis
+    // Nomor per jenis (PRD 7.6)
     if (data.jenis === 'nib') {
       if (!data.nomor || !/^\d{13}$/.test(data.nomor)) {
         ctx.addIssue({
@@ -29,37 +36,36 @@ export const uploadDocumentSchema = z
         });
       }
     } else if (['spp_irt', 'halal', 'hak_merek'].includes(data.jenis)) {
-      if (!data.nomor || data.nomor.length < 5 || data.nomor.length > 60) {
+      if (!data.nomor || data.nomor.length < 8 || data.nomor.length > 60) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Nomor dokumen harus antara 5 hingga 60 karakter',
+          message: 'Nomor dokumen harus antara 8 hingga 60 karakter',
           path: ['nomor'],
         });
       }
     }
 
-    // Validasi masa berlaku untuk halal dan spp_irt
-    if (['halal', 'spp_irt'].includes(data.jenis)) {
-      if (!data.masaBerlaku) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Masa berlaku wajib diisi untuk dokumen Halal dan SPP-IRT',
-          path: ['masaBerlaku'],
-        });
-      }
+    // Masa berlaku wajib untuk halal dan spp_irt
+    if (['halal', 'spp_irt'].includes(data.jenis) && !data.masaBerlaku) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Masa berlaku wajib diisi untuk dokumen Halal dan SPP-IRT',
+        path: ['masaBerlaku'],
+      });
     }
 
-    // Validasi masa simpan bulan untuk uji_umur_simpan
+    // Masa simpan (bulan) wajib untuk uji_umur_simpan
     if (data.jenis === 'uji_umur_simpan') {
       if (
         data.masaSimpanBulan === undefined ||
         isNaN(data.masaSimpanBulan) ||
+        !Number.isInteger(data.masaSimpanBulan) ||
         data.masaSimpanBulan < 1 ||
         data.masaSimpanBulan > 60
       ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Masa simpan wajib diisi antara 1 hingga 60 bulan',
+          message: 'Masa simpan wajib diisi bilangan bulat antara 1 hingga 60 bulan',
           path: ['masaSimpanBulan'],
         });
       }

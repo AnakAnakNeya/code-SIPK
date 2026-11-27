@@ -69,6 +69,12 @@ const kurasiSubmissionSchema = new mongoose.Schema(
       ref: 'User',
       index: true,
     },
+
+    aktif: {
+      type: Boolean,
+      default: true, // jadi false saat pengajuan disetujui (diatur di kurasi/service.js)
+    },
+
     checks: {
       profil: { type: checkItemSchema, default: () => ({ status: 'belum' }) },
       nib: { type: checkItemSchema, default: () => ({ status: 'belum' }) },
@@ -102,13 +108,11 @@ const kurasiSubmissionSchema = new mongoose.Schema(
   },
 );
 
-// Index unik parsial: hanya satu pengajuan aktif per produk (status != 'disetujui') (AC-04-02)
+// Hanya satu pengajuan aktif per produk (AC-04-02).
+// Catatan: partialFilterExpression MongoDB tidak mendukung $ne, jadi dipakai penanda boolean `aktif`.
 kurasiSubmissionSchema.index(
   { productId: 1 },
-  {
-    unique: true,
-    partialFilterExpression: { status: { $ne: 'disetujui' } },
-  },
+  { unique: true, partialFilterExpression: { aktif: true } },
 );
 
 export const KurasiSubmission = mongoose.model('KurasiSubmission', kurasiSubmissionSchema);
