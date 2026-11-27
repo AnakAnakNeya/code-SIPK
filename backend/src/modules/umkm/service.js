@@ -31,81 +31,111 @@ export async function updateProfile(businessId, userId, changes, ip) {
   return profile;
 }
 
-/** Direktori UMKM untuk staf & kabid (PBI-06) */
-export async function listDirectory({ kecamatan, kategori, statusAkun, q, page = 1, limit = 10 }) {
+/** Aman dari karakter spesial regex (cegah ReDoS / injeksi pola). */
+const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Susun filter direktori. Filter status akun diterapkan di level query (bukan setelah
+ * paginasi) agar total & jumlah halaman akurat (AC-06-02).
+ */
+async function buildDirectoryMatch({ kecamatan, kategori, statusAkun, q }) {
   const match = {};
   if (kecamatan && kecamatan !== 'all') match.kecamatan = kecamatan;
   if (kategori && kategori !== 'all') match.kategoriUtama = kategori;
 
   if (q && q.trim()) {
-    const rx = new RegExp(q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    const rx = new RegExp(escapeRegex(q.trim()), 'i');
     match.$or = [{ namaUsaha: rx }, { nib: rx }, { alamat: rx }];
   }
 
-  const skip = (Math.max(1, page) - 1) * limit;
+  if (statusAkun && statusAkun !== 'all') {
+    const userIds = await User.find({ role: 'umkm', status: statusAkun }).distinct('_id');
+    match.userId = { $in: userIds };
+  }
+  return match;
+}
+
+/** Direktori UMKM untuk staf & kabid (PBI-06) */
+export async function listDirectory({ kecamatan, kategori, statusAkun, q, page = 1, limit = 10 }) {
+  const pageNum = Math.max(1, Number(page) || 1);
+  const limitNum = Math.min(100, Math.max(1, Number(limit) || 10));
+  const match = await buildDirectoryMatch({ kecamatan, kategori, statusAkun, q });
 
   const [profiles, total] = await Promise.all([
     BusinessProfile.find(match)
       .populate('userId', 'nama email noHp status catatanStatus createdAt')
       .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(Number(limit))
+      .skip((pageNum - 1) * limitNum)
+      .limit(limitNum)
       .lean(),
     BusinessProfile.countDocuments(match),
   ]);
 
-  // Filter status akun jika diminta
-  let filtered = profiles;
-  if (statusAkun && statusAkun !== 'all') {
-    filtered = profiles.filter((p) => p.userId?.status === statusAkun);
-  }
+  // Hindari N+1: ambil dokumen & hitungan produk semua profil halaman ini sekaligus.
+  const ids = profiles.map((p) => p._id);
+  const [docs, productCounts] = await Promise.all([
+    LegalDocument.find({ businessId: { $in: ids } }).select('businessId jenis statusVerifikasi').lean(),
+    Product.aggregate([
+      { $match: { businessId: { $in: ids } } },
+      {
+        $group: {
+          _id: '$businessId',
+          total: { $sum: 1 },
+          terkurasi: { $sum: { $cond: [{ $eq: ['$statusKurasi', 'terkurasi'] }, 1, 0] } },
+        },
+      },
+    ]),
+  ]);
 
-  // Hitung jumlah produk & dokumen per profil
-  const items = await Promise.all(
-    filtered.map(async (p) => {
-      const [totalProduk, terkurasiProduk, docs] = await Promise.all([
-        Product.countDocuments({ businessId: p._id }),
-        Product.countDocuments({ businessId: p._id, statusKurasi: 'terkurasi' }),
-        LegalDocument.find({ businessId: p._id }).select('jenis statusVerifikasi'),
-      ]);
-      return {
-        id: String(p._id),
-        namaUsaha: p.namaUsaha,
-        kecamatan: p.kecamatan,
-        kategoriUtama: p.kategoriUtama,
-        subKomoditas: p.subKomoditas,
-        nib: p.nib,
-        waUsaha: p.waUsaha,
-        alamat: p.alamat,
-        tahunMulai: p.tahunMulai,
-        user: p.userId
-          ? {
-              id: String(p.userId._id),
-              nama: p.userId.nama,
-              email: p.userId.email,
-              noHp: p.userId.noHp,
-              status: p.userId.status,
-              catatanStatus: p.userId.catatanStatus,
-              createdAt: p.userId.createdAt,
-            }
-          : null,
-        dokumen: docs,
-        totalProduk,
-        terkurasiProduk,
-      };
-    }),
-  );
+  const docsByBiz = new Map();
+  for (const d of docs) {
+    const key = String(d.businessId);
+    if (!docsByBiz.has(key)) docsByBiz.set(key, []);
+    docsByBiz.get(key).push({ _id: d._id, jenis: d.jenis, statusVerifikasi: d.statusVerifikasi });
+  }
+  const countByBiz = new Map(productCounts.map((c) => [String(c._id), c]));
+
+  const items = profiles.map((p) => {
+    const counts = countByBiz.get(String(p._id));
+    return {
+      id: String(p._id),
+      namaUsaha: p.namaUsaha,
+      kecamatan: p.kecamatan,
+      kategoriUtama: p.kategoriUtama,
+      subKomoditas: p.subKomoditas,
+      nib: p.nib,
+      waUsaha: p.waUsaha,
+      alamat: p.alamat,
+      tahunMulai: p.tahunMulai,
+      user: p.userId
+        ? {
+            id: String(p.userId._id),
+            nama: p.userId.nama,
+            email: p.userId.email,
+            noHp: p.userId.noHp,
+            status: p.userId.status,
+            catatanStatus: p.userId.catatanStatus,
+            createdAt: p.userId.createdAt,
+          }
+        : null,
+      dokumen: docsByBiz.get(String(p._id)) ?? [],
+      totalProduk: counts?.total ?? 0,
+      terkurasiProduk: counts?.terkurasi ?? 0,
+    };
+  });
 
   return {
     items,
     pagination: {
-      page: Number(page),
-      limit: Number(limit),
+      page: pageNum,
+      limit: limitNum,
       total,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(total / limitNum),
     },
   };
 }
+/** Cegah formula injection di Excel: sel berawalan = + - @ dianggap teks. */
+const safeCell = (v) => (typeof v === 'string' && /^[=+\-@\t\r]/.test(v) ? `'${v}` : v);
 
 /** Ringkasan jumlah UMKM per 28 kecamatan (AC-06-03) */
 export async function getSummaryPerKecamatan() {
@@ -172,31 +202,23 @@ export async function verifyAccount(businessId, stafId, { keputusan, catatan }, 
 export async function registerManualByDinas(data, stafId, ip) {
   const { nama, email, noHp, namaUsaha, kecamatan, kategoriUtama, subKomoditas, nib, alamat, waUsaha } = data;
 
-  if (!nama || !email || !namaUsaha || !kecamatan) {
-    throw AppError.validation('Nama pemilik, email, nama usaha, dan kecamatan wajib diisi');
+  // Data sudah divalidasi & dinormalisasi oleh registerManualSchema (route).
+  const [emailTaken, nibTaken] = await Promise.all([User.exists({ email }), BusinessProfile.exists({ nib })]);
+  if (emailTaken || nibTaken) {
+    const fields = {};
+    if (emailTaken) fields.email = 'Email sudah terdaftar';
+    if (nibTaken) fields.nib = 'NIB sudah terdaftar';
+    throw AppError.conflict('Data yang Anda isi sudah terdaftar.', fields);
   }
 
-  const existingUser = await User.findOne({ email: email.toLowerCase() });
-  if (existingUser) {
-    throw AppError.conflict('Email sudah terdaftar dalam sistem.');
-  }
-
-  const cleanNib = nib ? String(nib).trim() : '';
-  if (cleanNib) {
-    const existingNib = await BusinessProfile.findOne({ nib: cleanNib });
-    if (existingNib) {
-      throw AppError.conflict('Nomor Induk Berusaha (NIB) sudah terdaftar.');
-    }
-  }
-
-  // Buat kata sandi sementara 10 karakter acak
+  // Kata sandi sementara acak (kriptografis)
   const tempPassword = 'Lbk' + crypto.randomBytes(4).toString('hex').slice(0, 6) + '!';
   const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
   const user = await User.create({
-    nama: nama.trim(),
-    email: email.toLowerCase().trim(),
-    noHp: noHp ? String(noHp).trim() : '',
+    nama,
+    email,
+    noHp: noHp || '',
     passwordHash: hashedPassword,
     role: 'umkm',
     status: 'aktif',
@@ -204,18 +226,23 @@ export async function registerManualByDinas(data, stafId, ip) {
     mustChangePassword: true,
   });
 
-  const profile = await BusinessProfile.create({
-    userId: user._id,
-    namaUsaha: namaUsaha.trim(),
-    kecamatan,
-    kategoriUtama: kategoriUtama || 'olahan_pangan',
-    subKomoditas: subKomoditas ? subKomoditas.trim() : '',
-    nib: cleanNib,
-    alamat: alamat ? alamat.trim() : '',
-    waUsaha: waUsaha ? String(waUsaha).trim() : (noHp ? String(noHp).trim() : ''),
-    tahunMulai: new Date().getFullYear(),
-  });
-
+  let profile;
+  try {
+    profile = await BusinessProfile.create({
+      userId: user._id,
+      namaUsaha,
+      kecamatan,
+      kategoriUtama,
+      subKomoditas,
+      nib,
+      alamat,
+      waUsaha: waUsaha || noHp || '-',
+      tahunMulai: new Date().getFullYear(),
+    });
+  } catch (err) {
+    await User.deleteOne({ _id: user._id }); // kompensasi: tidak ada akun tanpa profil
+    throw err;
+  }
   await auditLog.write({
     actorId: stafId,
     action: 'umkm.didaftarkan_manual_dinas',
@@ -339,25 +366,13 @@ export async function getUmkmDetail(businessId) {
  * Mengikuti filter aktif: kecamatan, kategori, statusAkun, dan pencarian teks.
  */
 export async function exportDirectoryExcel({ kecamatan, kategori, statusAkun, q }) {
-  const match = {};
-  if (kecamatan && kecamatan !== 'all') match.kecamatan = kecamatan;
-  if (kategori && kategori !== 'all') match.kategoriUtama = kategori;
+  const match = await buildDirectoryMatch({ kecamatan, kategori, statusAkun, q });
 
-  if (q && q.trim()) {
-    const rx = new RegExp(q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-    match.$or = [{ namaUsaha: rx }, { nib: rx }, { alamat: rx }];
-  }
-
-  const profiles = await BusinessProfile.find(match)
+  const filtered = await BusinessProfile.find(match)
     .populate('userId', 'nama email noHp status catatanStatus createdAt')
     .sort({ createdAt: -1 })
+    .limit(5000)
     .lean();
-
-  let filtered = profiles;
-  if (statusAkun && statusAkun !== 'all') {
-    filtered = profiles.filter((p) => p.userId?.status === statusAkun);
-  }
-
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'SIPK-Lebak (Dinas Koperasi & UKM Kab. Lebak)';
   workbook.created = new Date();
@@ -419,15 +434,15 @@ export async function exportDirectoryExcel({ kecamatan, kategori, statusAkun, q 
   filtered.forEach((p, index) => {
     const row = worksheet.addRow([
       index + 1,
-      p.namaUsaha,
+      safeCell(p.namaUsaha),
       p.nib,
-      p.userId?.nama || '-',
-      p.userId?.email || '-',
+      safeCell(p.userId?.nama) || '-',
+      safeCell(p.userId?.email) || '-',
       p.waUsaha || p.userId?.noHp || '-',
       p.kecamatan,
-      p.alamat,
+      safeCell(p.alamat),
       p.kategoriUtama === 'olahan_pangan' ? 'Olahan Pangan' : 'Kriya & Tenun',
-      Array.isArray(p.subKomoditas) ? p.subKomoditas.join(', ') : '-',
+      Array.isArray(p.subKomoditas) ? safeCell(p.subKomoditas.join(', ')) : '-',
       p.tahunMulai || '-',
       p.userId?.status?.toUpperCase() || 'MENUNGGU_PERSETUJUAN',
     ]);

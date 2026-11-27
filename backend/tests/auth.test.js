@@ -403,4 +403,72 @@ describe('PBI-06: Pendaftaran UMKM Manual & Ajukan Ulang Akun [Naila]', () => {
     });
     assert.equal(res.status, 409);
   });
+
+  it('AC-06-02: filter status akun memengaruhi total & paginasi (bukan hanya halaman aktif)', async () => {
+    await makeUser({ email: 'staf-filter@diskop-lebak.go.id', role: 'staf', status: 'aktif' });
+    const stafAgent = request.agent(app);
+    await stafAgent.post(`${API}/auth/login`).send({ identifier: 'staf-filter@diskop-lebak.go.id', password: 'Password123' });
+
+    for (let i = 0; i < 3; i += 1) {
+      const u = await makeUser({ email: `filter-${i}@example.com`, role: 'umkm', status: i === 0 ? 'ditolak' : 'aktif' });
+      await BusinessProfile.create({
+        userId: u._id,
+        namaUsaha: `Usaha Filter ${i}`,
+        kecamatan: 'Rangkasbitung',
+        alamat: 'Jl. Filter Rangkasbitung No. 1',
+        kategoriUtama: 'olahan_pangan',
+        waUsaha: '081234567890',
+        nib: `55500000000${i}0`.slice(0, 13),
+      });
+    }
+
+    const res = await stafAgent.get(`${API}/umkm?statusAkun=ditolak&limit=1`);
+    assert.equal(res.status, 200);
+    assert.equal(res.body.pagination.total, 1);
+    assert.equal(res.body.data.length, 1);
+    assert.equal(res.body.data[0].user.status, 'ditolak');
+  });
+
+  it('AC-06-09: pendaftaran manual menolak data tidak valid (422) dan duplikat (409)', async () => {
+    await makeUser({ email: 'staf-valid@diskop-lebak.go.id', role: 'staf', status: 'aktif' });
+    const stafAgent = request.agent(app);
+    await stafAgent.post(`${API}/auth/login`).send({ identifier: 'staf-valid@diskop-lebak.go.id', password: 'Password123' });
+
+    const bad = await stafAgent.post(`${API}/umkm/manual`).send({ nama: 'Al', email: 'bukan-email', nib: '123' });
+    assert.equal(bad.status, 422);
+    assert.ok(bad.body.error.fields.email);
+    assert.ok(bad.body.error.fields.nib);
+
+    const data = {
+      nama: 'Bu Entin Cibeber',
+      email: 'entin.cibeber@example.com',
+      noHp: '081377788899',
+      namaUsaha: 'Keripik Entin',
+      kecamatan: 'Cibeber',
+      kategoriUtama: 'olahan_pangan',
+      subKomoditas: 'Keripik, Dodol',
+      nib: '9990001112223',
+      alamat: 'Kp. Cibeber Girang RT 01',
+    };
+    const ok1 = await stafAgent.post(`${API}/umkm/manual`).send(data);
+    assert.equal(ok1.status, 201);
+    const dup = await stafAgent.post(`${API}/umkm/manual`).send(data);
+    assert.equal(dup.status, 409);
+    assert.ok(dup.body.error.fields.email);
+  });
+
+  it('AC-06-04/06: ID tidak valid -> 422 dan penolakan akun wajib beralasan', async () => {
+    await makeUser({ email: 'staf-param@diskop-lebak.go.id', role: 'staf', status: 'aktif' });
+    const stafAgent = request.agent(app);
+    await stafAgent.post(`${API}/auth/login`).send({ identifier: 'staf-param@diskop-lebak.go.id', password: 'Password123' });
+
+    const badId = await stafAgent.get(`${API}/umkm/bukan-objectid`);
+    assert.equal(badId.status, 422);
+
+    const noReason = await stafAgent
+      .patch(`${API}/umkm/507f1f77bcf86cd799439011/persetujuan`)
+      .send({ keputusan: 'tolak' });
+    assert.equal(noReason.status, 422);
+    assert.ok(noReason.body.error.fields.catatan);
+  });
 });

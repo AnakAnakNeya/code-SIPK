@@ -804,6 +804,9 @@ export function DirektoriUmkmPage() {
                       <label className="block font-bold text-navy-900 mb-1">No. WhatsApp / HP</label>
                       <input
                         type="tel"
+                        required
+                        pattern="^(\+62|62|0)8\d{8,11}$"
+                        title="Contoh: 081234567890"
                         placeholder="081234567890"
                         value={manualForm.noHp}
                         onChange={(e) => setManualForm({ ...manualForm, noHp: e.target.value })}

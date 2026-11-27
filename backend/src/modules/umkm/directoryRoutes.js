@@ -8,7 +8,14 @@
 import { Router } from 'express';
 import { authenticate } from '../../middleware/authenticate.js';
 import { authorize } from '../../middleware/authorize.js';
+import { validate } from '../../middleware/validate.js';
 import * as controller from './controller.js';
+import {
+  directoryQuerySchema,
+  idParamSchema,
+  registerManualSchema,
+  verifyAccountSchema,
+} from './schemas.js';
 
 const router = Router();
 
@@ -16,21 +23,26 @@ const router = Router();
 router.use(authenticate, authorize('staf'));
 
 // [PBI-06 - AC-06-01 s/d AC-06-02] Direktori lengkap UMKM dengan filter kecamatan & status akun
-router.get('/', controller.listDirectory);
+router.get('/', validate(directoryQuerySchema, 'query'), controller.listDirectory);
 
 // [PBI-06 - AC-06-03] Ringkasan jumlah binaan per 28 kecamatan Kabupaten Lebak
 router.get('/summary', controller.getSummary);
 
 // [PBI-06 - AC-06-10] Ekspor data direktori UMKM ke file spreadsheet Excel (.xlsx)
-router.get('/export', controller.exportExcel);
+router.get('/export', validate(directoryQuerySchema, 'query'), controller.exportExcel);
 
 // [PBI-06 - AC-06-04] Detail profil usaha, dokumen legalitas & produk untuk dinas
-router.get('/:id', controller.getDetail);
+router.get('/:id', validate(idParamSchema, 'params'), controller.getDetail);
 
 // [PBI-06 - AC-06-06 s/d AC-06-08] Persetujuan / penolakan akun mandiri UMKM
-router.patch('/:id/persetujuan', controller.verifyAccount);
+router.patch(
+  '/:id/persetujuan',
+  validate(idParamSchema, 'params'),
+  validate(verifyAccountSchema),
+  controller.verifyAccount,
+);
 
 // [PBI-06 - AC-06-09] Pendaftaran manual UMKM binaan oleh staf dinas (jemput bola)
-router.post('/manual', controller.registerManual);
+router.post('/manual', validate(registerManualSchema), controller.registerManual);
 
 export default router;

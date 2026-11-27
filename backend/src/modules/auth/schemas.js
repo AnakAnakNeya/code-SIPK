@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { KATEGORI } from '../../constants/enums.js';
 import { KECAMATAN } from '../../constants/kecamatan.js';
 
-const noHp = z.string().trim().regex(/^(\+62|62|0)8\d{8,11}$/, 'Nomor HP tidak valid');
+export const noHp = z.string().trim().regex(/^(\+62|62|0)8\d{8,11}$/, 'Nomor HP tidak valid');
 
 export const passwordRule = z
   .string({ required_error: 'Kata sandi wajib diisi' })
@@ -10,7 +10,7 @@ export const passwordRule = z
   .regex(/[A-Za-z]/, 'Kata sandi harus mengandung huruf')
   .regex(/\d/, 'Kata sandi harus mengandung angka');
 
-const nib = z.string().trim().regex(/^\d{13}$/, 'NIB harus 13 digit angka');
+export const nib = z.string().trim().regex(/^\d{13}$/, 'NIB harus 13 digit angka');
 
 const profilFields = {
   namaUsaha: z.string().trim().min(3, 'Nama usaha minimal 3 karakter').max(120),
