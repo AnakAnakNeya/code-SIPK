@@ -33,6 +33,7 @@ import { Button } from '../../components/ui/Button.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Alert } from '../../components/ui/Alert.jsx';
 import { CustomSelect } from '../../components/ui/CustomSelect.jsx';
+import { sanitizePhoneInput, digitsOnly, phoneError, nameError, nibError, normalizePhone } from '../../utils/validators.js';
 import { KECAMATAN } from '../../constants/kecamatan.js';
 
 const STATUS_OPTIONS = [
@@ -128,17 +129,23 @@ export function DirektoriUmkmPage() {
   const [manualSubmitting, setManualSubmitting] = useState(false);
   const [createdResult, setCreatedResult] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [manualErr, setManualErr] = useState(null);
 
   const handleManualSubmit = async (e) => {
     e.preventDefault();
+    const invalid = nameError(manualForm.nama, 'Nama pemilik') || phoneError(manualForm.noHp) || nibError(manualForm.nib);
+    if (invalid) {
+      setManualErr(invalid);
+      return;
+    }
     setManualSubmitting(true);
-    setErr(null);
+    setManualErr(null);
     try {
-      const res = await api.post('/umkm/manual', manualForm);
+      const res = await api.post('/umkm/manual', { ...manualForm, noHp: normalizePhone(manualForm.noHp) });
       setCreatedResult(res.data);
       loadData();
     } catch (e) {
-      setErr(e.message || 'Gagal mendaftarkan UMKM');
+      setManualErr(e.message || 'Gagal mendaftarkan UMKM');
     } finally {
       setManualSubmitting(false);
     }
@@ -776,6 +783,7 @@ export function DirektoriUmkmPage() {
                 </div>
 
                 <div className="space-y-3 text-xs">
+                  {manualErr && <Alert type="error" onClose={() => setManualErr(null)}>{manualErr}</Alert>}
                   <div>
                     <label className="block font-bold text-navy-900 mb-1">Nama Pemilik Usaha *</label>
                     <input
@@ -801,18 +809,21 @@ export function DirektoriUmkmPage() {
                       />
                     </div>
                     <div>
-                      <label className="block font-bold text-navy-900 mb-1">No. WhatsApp / HP</label>
+                      <label className="block font-bold text-navy-900 mb-1">No. WhatsApp / HP *</label>
                       <input
                         type="tel"
+                        inputMode="tel"
                         required
-                        pattern="^(\+62|62|0)8\d{8,11}$"
-                        title="Contoh: 081234567890"
+                        maxLength={16}
+                        title="Hanya angka, diawali 08, 10-13 digit"
                         placeholder="081234567890"
                         value={manualForm.noHp}
-                        onChange={(e) => setManualForm({ ...manualForm, noHp: e.target.value })}
+                        onChange={(e) => setManualForm({ ...manualForm, noHp: sanitizePhoneInput(e.target.value) })}
                         className="w-full p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-navy-900"
                       />
-                    </div>
+                      <p className={`mt-1 text-[11px] ${manualForm.noHp && phoneError(manualForm.noHp) ? 'text-rose-600 font-medium' : 'text-slate-500'}`}>
+                        {manualForm.noHp && phoneError(manualForm.noHp) ? phoneError(manualForm.noHp) : 'Hanya angka, diawali 08, 10-13 digit'}
+                      </p>                    </div>
                   </div>
 
                   <div>
@@ -858,12 +869,15 @@ export function DirektoriUmkmPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block font-bold text-navy-900 mb-1">Nomor Induk Berusaha (NIB)</label>
+                      <label className="block font-bold text-navy-900 mb-1">Nomor Induk Berusaha (NIB) * <span className="font-normal text-slate-400">({manualForm.nib.length}/13)</span></label>
                       <input
                         type="text"
+                        inputMode="numeric"
+                        required
+                        maxLength={13}
                         placeholder="13 digit angka OSS-RBA"
                         value={manualForm.nib}
-                        onChange={(e) => setManualForm({ ...manualForm, nib: e.target.value })}
+                        onChange={(e) => setManualForm({ ...manualForm, nib: digitsOnly(e.target.value).slice(0, 13) })}
                         className="w-full p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-navy-900 font-mono"
                       />
                     </div>

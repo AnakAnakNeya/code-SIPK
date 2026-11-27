@@ -14,7 +14,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Check, ArrowLeft, ArrowRight, ShieldCheck, Plus, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { AuthLayout } from '../../layouts/AuthLayout.jsx';
-import { Input, Select } from '../../components/ui/Input.jsx';
+import { Input, Select, PhoneInput, DigitInput, PasswordInput } from '../../components/ui/Input.jsx';
+import { PasswordChecklist } from '../../components/ui/PasswordChecklist.jsx';
+import { nameError, emailError, phoneError, nibError, passwordError, normalizePhone } from '../../utils/validators.js';
 import { Button } from '../../components/ui/Button.jsx';
 import { Alert } from '../../components/ui/Alert.jsx';
 import { KECAMATAN } from '../../constants/kecamatan.js';
@@ -80,13 +82,13 @@ export function RegisterWizardPage() {
 
   // Validasi Langkah 1
   const validateStep1 = () => {
-    if (!formData.nama || formData.nama.length < 3) return 'Nama pemilik minimal 3 karakter';
-    if (!formData.email || !/^\S+@\S+\.\S+$/.test(formData.email)) return 'Email tidak valid';
-    if (!formData.noHp || !/^(\+62|62|0)8\d{8,11}$/.test(formData.noHp)) return 'Nomor HP tidak valid (contoh: 081234567890)';
-    if (!formData.password || formData.password.length < 8) return 'Kata sandi minimal 8 karakter';
-    if (!/[A-Za-z]/.test(formData.password) || !/\d/.test(formData.password)) return 'Kata sandi harus mengandung huruf dan angka';
-    if (formData.password !== formData.confirmPassword) return 'Konfirmasi kata sandi tidak cocok';
-    return null;
+    return (
+      nameError(formData.nama, 'Nama pemilik') ||
+      emailError(formData.email) ||
+      phoneError(formData.noHp, 'Nomor HP pemilik') ||
+      passwordError(formData.password) ||
+      (formData.password !== formData.confirmPassword ? 'Konfirmasi kata sandi tidak cocok' : null)
+    );
   };
 
   // Validasi Langkah 2
@@ -97,9 +99,7 @@ export function RegisterWizardPage() {
       return `Tahun mulai usaha harus antara 1950 dan ${new Date().getFullYear()}`;
     }
     if (!formData.alamat || formData.alamat.length < 10) return 'Alamat sentra usaha minimal 10 karakter';
-    if (!formData.waUsaha) return 'Nomor WhatsApp usaha wajib diisi';
-    if (!formData.nib || !/^\d{13}$/.test(formData.nib.trim())) return 'NIB harus tepat 13 digit angka sesuai OSS-RBA';
-    return null;
+    return phoneError(formData.waUsaha, 'Nomor WhatsApp usaha') || nibError(formData.nib);
   };
 
   // Validasi Langkah 3 & Submit
@@ -122,13 +122,13 @@ export function RegisterWizardPage() {
       const payload = {
         nama: formData.nama.trim(),
         email: formData.email.trim().toLowerCase(),
-        noHp: formData.noHp.trim(),
+        noHp: normalizePhone(formData.noHp),
         password: formData.password,
         namaUsaha: formData.namaUsaha.trim(),
         kecamatan: formData.kecamatan,
         tahunMulai: Number(formData.tahunMulai),
         alamat: formData.alamat.trim(),
-        waUsaha: formData.waUsaha.trim(),
+        waUsaha: normalizePhone(formData.waUsaha),
         nib: formData.nib.trim(),
         kategoriUtama: formData.kategoriUtama,
         subKomoditas: formData.subKomoditas,
@@ -202,35 +202,40 @@ export function RegisterWizardPage() {
             value={formData.email}
             onChange={handleChange}
           />
-          <Input
+          <PhoneInput
             label="Nomor HP Pemilik (Aktif WhatsApp)"
             name="noHp"
             required
             placeholder="081234567890"
-            helperText="Digunakan untuk notifikasi dan pemulihan akun"
+            helperText="Hanya angka, diawali 08, 10-13 digit. Digunakan untuk notifikasi dan pemulihan akun"
+            error={formData.noHp ? phoneError(formData.noHp, 'Nomor HP') : null}
             value={formData.noHp}
             onChange={handleChange}
           />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
+            <PasswordInput
               label="Kata Sandi"
               name="password"
-              type="password"
               required
-              placeholder="Minimal 8 karakter"
+              placeholder="Buat kata sandi kuat"
               value={formData.password}
               onChange={handleChange}
             />
-            <Input
+            <PasswordInput
               label="Ulangi Kata Sandi"
               name="confirmPassword"
-              type="password"
               required
               placeholder="Ulangi sandi"
+              error={
+                formData.confirmPassword && formData.confirmPassword !== formData.password
+                  ? 'Konfirmasi kata sandi tidak cocok'
+                  : null
+              }
               value={formData.confirmPassword}
               onChange={handleChange}
             />
           </div>
+          <PasswordChecklist password={formData.password} />
 
           <div className="pt-4 flex justify-end">
             <Button variant="primary" onClick={handleNext} className="gap-2">
@@ -287,22 +292,24 @@ export function RegisterWizardPage() {
             onChange={handleChange}
           />
 
-          <Input
+          <PhoneInput
             label="Nomor WhatsApp Usaha / Pemasaran"
             name="waUsaha"
             required
             placeholder="081234567890"
-            helperText="Nomor ini akan tampil di katalog untuk dihubungi mitra pembeli"
+            helperText="Hanya angka, 10-13 digit. Nomor ini tampil di katalog untuk dihubungi mitra pembeli"
+            error={formData.waUsaha ? phoneError(formData.waUsaha, 'Nomor WhatsApp') : null}
             value={formData.waUsaha}
             onChange={handleChange}
           />
 
-          <Input
+          <DigitInput
             label="Nomor Induk Berusaha (NIB)"
             name="nib"
             required
             placeholder="13 digit angka"
-            helperText="13 digit angka sesuai izin OSS-RBA (tanpa spasi/tanda hubung)"
+            helperText={`13 digit angka sesuai izin OSS-RBA (${formData.nib.length}/13)`}
+            error={formData.nib && formData.nib.length !== 13 ? 'NIB harus tepat 13 digit angka' : null}
             value={formData.nib}
             onChange={handleChange}
           />

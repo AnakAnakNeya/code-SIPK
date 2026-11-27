@@ -8,7 +8,9 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, KeyRound } from 'lucide-react';
 import api from '../../api/client.js';
 import { AuthLayout } from '../../layouts/AuthLayout.jsx';
-import { Input } from '../../components/ui/Input.jsx';
+import { PasswordInput } from '../../components/ui/Input.jsx';
+import { PasswordChecklist } from '../../components/ui/PasswordChecklist.jsx';
+import { passwordError } from '../../utils/validators.js';
 import { Button } from '../../components/ui/Button.jsx';
 import { Alert } from '../../components/ui/Alert.jsx';
 
@@ -32,12 +34,9 @@ export function ResetPasswordPage() {
       setErr('Token pemulihan tidak ditemukan di tautan.');
       return;
     }
-    if (!password || password.length < 8) {
-      setErr('Kata sandi baru minimal 8 karakter.');
-      return;
-    }
-    if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
-      setErr('Kata sandi baru harus memuat kombinasi huruf dan angka.');
+    const pwErr = passwordError(password, 'Kata sandi baru');
+    if (pwErr) {
+      setErr(pwErr);
       return;
     }
     if (password !== confirmPassword) {
@@ -80,25 +79,24 @@ export function ResetPasswordPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {err && <Alert type="error">{err}</Alert>}
 
-          <Input
+          <PasswordInput
             label="Kata Sandi Baru"
-            type="password"
             required
-            placeholder="Minimal 8 karakter"
-            helperText="Wajib mengandung kombinasi huruf dan angka"
+            placeholder="Buat kata sandi kuat"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          <Input
+          <PasswordChecklist password={password} />
+
+          <PasswordInput
             label="Ulangi Kata Sandi Baru"
-            type="password"
             required
             placeholder="Ulangi kata sandi baru"
+            error={confirmPassword && confirmPassword !== password ? 'Konfirmasi kata sandi tidak cocok' : null}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
           />
-
           <div className="pt-2">
             <Button
               type="submit"

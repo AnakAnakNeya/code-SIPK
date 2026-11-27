@@ -10,6 +10,8 @@ import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { MENUS_BY_ROLE } from '../config/menuConfig.js';
 import { Navbar, Sidebar } from '../components/index.js';
+import { PasswordChecklist } from '../components/ui/PasswordChecklist.jsx';
+import { passwordError } from '../utils/validators.js';
 
 export function AppLayout({ children }) {
   const { user, logout, refreshUser } = useAuth();
@@ -28,10 +30,8 @@ export function AppLayout({ children }) {
     e.preventDefault();
     setPwdError(null);
     if (!currentPassword) return setPwdError('Kata sandi saat ini wajib diisi');
-    if (!newPassword || newPassword.length < 8) return setPwdError('Kata sandi baru minimal 8 karakter');
-    if (!/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword)) {
-      return setPwdError('Kata sandi baru harus mengandung kombinasi huruf dan angka');
-    }
+    const pwErr = passwordError(newPassword, 'Kata sandi baru');
+    if (pwErr) return setPwdError(pwErr);
     if (newPassword !== confirmPassword) return setPwdError('Konfirmasi kata sandi baru tidak cocok');
     if (currentPassword === newPassword) return setPwdError('Kata sandi baru harus berbeda dari kata sandi sementara');
 
@@ -100,16 +100,18 @@ export function AppLayout({ children }) {
 
               <div>
                 <label className="block text-xs font-bold text-navy-900 mb-1">
-                  Kata Sandi Baru (Min. 8 Karakter, Huruf & Angka) *
+                  Kata Sandi Baru *
                 </label>
                 <input
                   type="password"
                   required
-                  placeholder="Minimal 8 karakter"
+                  placeholder="Buat kata sandi kuat"
                   value={newPassword}
+                  maxLength={64}
                   onChange={(e) => setNewPassword(e.target.value)}
                   className="w-full h-10 px-3 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-navy-900"
                 />
+                <PasswordChecklist password={newPassword} className="mt-2" />
               </div>
 
               <div>

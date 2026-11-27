@@ -212,7 +212,7 @@ export async function registerManualByDinas(data, stafId, ip) {
   }
 
   // Kata sandi sementara acak (kriptografis)
-  const tempPassword = 'Lbk' + crypto.randomBytes(4).toString('hex').slice(0, 6) + '!';
+  const tempPassword = `Lbk${crypto.randomBytes(4).toString('hex').slice(0, 6)}!7`;
   const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
   const user = await User.create({

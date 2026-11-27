@@ -6,7 +6,7 @@ import mongoose from 'mongoose';
 import { z } from 'zod';
 import { KATEGORI } from '../../constants/enums.js';
 import { KECAMATAN } from '../../constants/kecamatan.js';
-import { nib, noHp } from '../auth/schemas.js';
+import { emailRule, namaOrang, nib, noHp } from '../auth/schemas.js';
 
 const kategoriValues = Object.values(KATEGORI);
 
@@ -40,8 +40,8 @@ export const verifyAccountSchema = z
   });
 
 export const registerManualSchema = z.object({
-  nama: z.string().trim().min(3, 'Nama pemilik minimal 3 karakter').max(100),
-  email: z.string().trim().toLowerCase().email('Format email tidak valid'),
+  nama: namaOrang,
+  email: emailRule,
   noHp,
   namaUsaha: z.string().trim().min(3, 'Nama usaha minimal 3 karakter').max(120),
   kecamatan: z.enum(KECAMATAN, { errorMap: () => ({ message: 'Pilih kecamatan di Kabupaten Lebak' }) }),

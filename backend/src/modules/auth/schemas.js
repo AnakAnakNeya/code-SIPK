@@ -2,16 +2,60 @@ import { z } from 'zod';
 import { KATEGORI } from '../../constants/enums.js';
 import { KECAMATAN } from '../../constants/kecamatan.js';
 
-export const noHp = z.string().trim().regex(/^(\+62|62|0)8\d{8,11}$/, 'Nomor HP tidak valid');
+// ---------------------------------------------------------------------------
+// Aturan input bersama (dipakai registrasi, profil, pendaftaran manual, reset sandi)
+// ---------------------------------------------------------------------------
 
+/** Rapikan nomor HP: buang spasi/tanda hubung/titik/kurung, ubah +62 / 62 menjadi 0. */
+export function normalizePhone(value) {
+  if (typeof value !== 'string') return value;
+  let v = value.replace(/[\s().-]/g, '');
+  if (v.startsWith('+62')) v = `0${v.slice(3)}`;
+  else if (v.startsWith('62')) v = `0${v.slice(2)}`;
+  return v;
+}
+
+/** HP seluler Indonesia: hanya angka, diawali 08, total 10 sampai 13 digit. */
+export const noHp = z.preprocess(
+  normalizePhone,
+  z
+    .string({ required_error: 'Nomor HP wajib diisi' })
+    .regex(/^\d+$/, 'Nomor HP hanya boleh berisi angka')
+    .regex(/^08/, 'Nomor HP harus diawali 08 (atau +62 8)')
+    .min(10, 'Nomor HP minimal 10 digit')
+    .max(13, 'Nomor HP maksimal 13 digit'),
+);
+
+/** Nama orang: huruf, spasi, titik, apostrof, tanda hubung; tanpa angka/simbol lain. */
+export const namaOrang = z
+  .string({ required_error: 'Nama wajib diisi' })
+  .trim()
+  .min(3, 'Nama minimal 3 karakter')
+  .max(100, 'Nama maksimal 100 karakter')
+  .regex(/^[\p{L}][\p{L}\s.'-]*$/u, 'Nama hanya boleh berisi huruf, spasi, titik, apostrof, dan tanda hubung');
+
+export const emailRule = z
+  .string({ required_error: 'Email wajib diisi' })
+  .trim()
+  .toLowerCase()
+  .max(254, 'Email maksimal 254 karakter')
+  .email('Format email tidak valid');
+
+/** Kata sandi baru: 8-64 karakter, huruf besar, huruf kecil, angka, simbol, tanpa spasi. */
 export const passwordRule = z
   .string({ required_error: 'Kata sandi wajib diisi' })
   .min(8, 'Kata sandi minimal 8 karakter')
-  .regex(/[A-Za-z]/, 'Kata sandi harus mengandung huruf')
-  .regex(/\d/, 'Kata sandi harus mengandung angka');
+  .max(64, 'Kata sandi maksimal 64 karakter')
+  .regex(/[a-z]/, 'Kata sandi harus mengandung huruf kecil')
+  .regex(/[A-Z]/, 'Kata sandi harus mengandung huruf besar')
+  .regex(/\d/, 'Kata sandi harus mengandung angka')
+  .regex(/[^A-Za-z0-9\s]/, 'Kata sandi harus mengandung simbol (contoh: ! @ # $ %)')
+  .regex(/^\S+$/, 'Kata sandi tidak boleh mengandung spasi');
 
-export const nib = z.string().trim().regex(/^\d{13}$/, 'NIB harus 13 digit angka');
-
+export const nib = z
+  .string({ required_error: 'NIB wajib diisi' })
+  .trim()
+  .regex(/^\d{13}$/, 'NIB harus 13 digit angka');
 const profilFields = {
   namaUsaha: z.string().trim().min(3, 'Nama usaha minimal 3 karakter').max(120),
   kecamatan: z.enum(KECAMATAN, { errorMap: () => ({ message: 'Pilih kecamatan di Kabupaten Lebak' }) }),
@@ -34,8 +78,8 @@ const profilFields = {
 export const registerSchema = z
   .object({
     // langkah 1
-    nama: z.string().trim().min(3, 'Nama minimal 3 karakter').max(100),
-    email: z.string().trim().toLowerCase().email('Format email tidak valid'),
+    nama: namaOrang,
+    email: emailRule,
     noHp,
     password: passwordRule,
     konfirmasiPassword: z.string().optional(),
@@ -53,12 +97,12 @@ export const registerSchema = z
 
 export const loginSchema = z.object({
   identifier: z.string({ required_error: 'Email atau NIB wajib diisi' }).trim().min(1, 'Email atau NIB wajib diisi'),
-  password: z.string({ required_error: 'Kata sandi wajib diisi' }).min(1, 'Kata sandi wajib diisi'),
+  password: z.string({ required_error: 'Kata sandi wajib diisi' }).min(1, 'Kata sandi wajib diisi').max(128, 'Kata sandi terlalu panjang'),
   remember: z.boolean().optional().default(false),
 });
 
 export const forgotSchema = z.object({
-  email: z.string().trim().toLowerCase().email('Format email tidak valid'),
+  email: emailRule,
 });
 
 export const resetSchema = z.object({
@@ -67,7 +111,7 @@ export const resetSchema = z.object({
 });
 
 export const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1, 'Kata sandi saat ini wajib diisi'),
+  currentPassword: z.string().min(1, 'Kata sandi saat ini wajib diisi').max(128),
   newPassword: passwordRule,
 });
 

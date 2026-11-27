@@ -21,7 +21,8 @@ import {
 import { useAuth } from '../../context/AuthContext.jsx';
 import api from '../../api/client.js';
 import { Card, CardHeader, CardContent, CardFooter } from '../../components/ui/Card.jsx';
-import { Input, Select } from '../../components/ui/Input.jsx';
+import { Input, Select, PhoneInput } from '../../components/ui/Input.jsx';
+import { phoneError, normalizePhone } from '../../utils/validators.js';
 import { Button } from '../../components/ui/Button.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Alert } from '../../components/ui/Alert.jsx';
@@ -113,6 +114,11 @@ export function ProfilUsahaPage() {
     e.preventDefault();
     setProfileErr(null);
     setProfileMsg(null);
+    const hpErr = phoneError(profile.waUsaha, 'Nomor WhatsApp');
+    if (hpErr) {
+      setProfileErr(hpErr);
+      return;
+    }
     setLoading(true);
 
     try {
@@ -121,7 +127,7 @@ export function ProfilUsahaPage() {
         kecamatan: profile.kecamatan,
         alamat: profile.alamat,
         tahunMulai: Number(profile.tahunMulai),
-        waUsaha: profile.waUsaha,
+        waUsaha: normalizePhone(profile.waUsaha),
         subKomoditas: profile.subKomoditas,
       });
       setProfileMsg('Perubahan profil usaha berhasil disimpan.');
@@ -266,9 +272,11 @@ export function ProfilUsahaPage() {
                   onChange={(e) => setProfile({ ...profile, alamat: e.target.value })}
                 />
 
-                <Input
+                <PhoneInput
                   label="WhatsApp Usaha / Pemasaran"
                   required
+                  helperText="Hanya angka, diawali 08, 10-13 digit"
+                  error={profile.waUsaha ? phoneError(profile.waUsaha, 'Nomor WhatsApp') : null}
                   value={profile.waUsaha}
                   onChange={(e) => setProfile({ ...profile, waUsaha: e.target.value })}
                 />

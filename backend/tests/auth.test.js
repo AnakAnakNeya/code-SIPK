@@ -21,8 +21,8 @@ const payload = (over = {}) => ({
   nama: 'Hj. Entin',
   email: 'entin@example.com',
   noHp: '081377112233',
-  password: 'Password123',
-  konfirmasiPassword: 'Password123',
+  password: 'Password123!',
+  konfirmasiPassword: 'Password123!',
   namaUsaha: 'KUB Aren Jaya',
   kecamatan: 'Sobang',
   tahunMulai: 2015,
@@ -68,7 +68,7 @@ describe('POST /auth/register', () => {
     assert.match(cookieOf(res), /HttpOnly/i);
     assert.equal(JSON.stringify(res.body).includes('passwordHash'), false);
     const stored = await User.findOne({ email: 'entin@example.com' }).select('+passwordHash');
-    assert.notEqual(stored.passwordHash, 'Password123');
+    assert.notEqual(stored.passwordHash, 'Password123!');
   });
 
   it('menolak NIB bukan 13 digit dengan pesan per field (422)', async () => {
@@ -103,13 +103,13 @@ describe('POST /auth/login', () => {
   });
 
   it('login dengan email', async () => {
-    const res = await request(app).post(`${API}/auth/login`).send({ identifier: 'ENTIN@example.com', password: 'Password123' });
+    const res = await request(app).post(`${API}/auth/login`).send({ identifier: 'ENTIN@example.com', password: 'Password123!' });
     assert.equal(res.status, 200);
     assert.ok(cookieOf(res));
   });
 
   it('login dengan NIB 13 digit', async () => {
-    const res = await request(app).post(`${API}/auth/login`).send({ identifier: '1234567890123', password: 'Password123' });
+    const res = await request(app).post(`${API}/auth/login`).send({ identifier: '1234567890123', password: 'Password123!' });
     assert.equal(res.status, 200);
     assert.equal(res.body.data.email, 'entin@example.com');
   });
@@ -125,7 +125,7 @@ describe('POST /auth/login', () => {
 
   it('akun nonaktif tidak bisa login (403)', async () => {
     await User.updateOne({ email: 'entin@example.com' }, { status: 'nonaktif' });
-    const res = await request(app).post(`${API}/auth/login`).send({ identifier: 'entin@example.com', password: 'Password123' });
+    const res = await request(app).post(`${API}/auth/login`).send({ identifier: 'entin@example.com', password: 'Password123!' });
     assert.equal(res.status, 403);
     assert.equal(res.body.error.message, 'Akun dinonaktifkan, hubungi dinas.');
   });
@@ -139,7 +139,7 @@ describe('POST /auth/login', () => {
     const blocked = await request(app).post(`${API}/auth/login`).send(body);
     assert.equal(blocked.status, 429);
     assert.equal(blocked.body.error.code, 'RATE_LIMITED');
-    const other = await request(app).post(`${API}/auth/login`).send({ identifier: 'entin@example.com', password: 'Password123' });
+    const other = await request(app).post(`${API}/auth/login`).send({ identifier: 'entin@example.com', password: 'Password123!' });
     assert.equal(other.status, 200);
   });
 
@@ -211,7 +211,7 @@ describe('sesi, RBAC, dan logout', () => {
     const blocked = await agent.get(`${API}/profil/saya`);
     assert.equal(blocked.status, 403);
     assert.equal(blocked.body.error.code, 'MUST_CHANGE_PASSWORD');
-    const change = await agent.post(`${API}/auth/change-password`).send({ currentPassword: 'Password123', newPassword: 'SandiBaru456' });
+    const change = await agent.post(`${API}/auth/change-password`).send({ currentPassword: 'Password123', newPassword: 'SandiBaru456!' });
     assert.equal(change.status, 200);
     assert.equal((await User.findOne({ email: 'baru@example.com' })).mustChangePassword, false);
   });
@@ -237,11 +237,11 @@ describe('lupa & ganti sandi', () => {
     user.resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
     await user.save();
 
-    const ok = await request(app).post(`${API}/auth/reset-password`).send({ token, password: 'SandiBaru456' });
+    const ok = await request(app).post(`${API}/auth/reset-password`).send({ token, password: 'SandiBaru456!' });
     assert.equal(ok.status, 200);
-    const again = await request(app).post(`${API}/auth/reset-password`).send({ token, password: 'LainLagi789' });
+    const again = await request(app).post(`${API}/auth/reset-password`).send({ token, password: 'LainLagi789!' });
     assert.equal(again.status, 422);
-    const login = await request(app).post(`${API}/auth/login`).send({ identifier: 'lupa@example.com', password: 'SandiBaru456' });
+    const login = await request(app).post(`${API}/auth/login`).send({ identifier: 'lupa@example.com', password: 'SandiBaru456!' });
     assert.equal(login.status, 200);
   });
 
@@ -253,7 +253,7 @@ describe('lupa & ganti sandi', () => {
       resetTokenHash: crypto.createHash('sha256').update(token).digest('hex'),
       resetExpires: new Date(Date.now() - 1000),
     });
-    const res = await request(app).post(`${API}/auth/reset-password`).send({ token, password: 'SandiBaru456' });
+    const res = await request(app).post(`${API}/auth/reset-password`).send({ token, password: 'SandiBaru456!' });
     assert.equal(res.status, 422);
   });
 });
@@ -470,5 +470,67 @@ describe('PBI-06: Pendaftaran UMKM Manual & Ajukan Ulang Akun [Naila]', () => {
       .send({ keputusan: 'tolak' });
     assert.equal(noReason.status, 422);
     assert.ok(noReason.body.error.fields.catatan);
+  });
+
+
+  it('Validasi dasar: HP angka 10-13 digit, nama tanpa angka, kebijakan kata sandi lengkap', async () => {
+    await makeUser({ email: 'staf-dasar@diskop-lebak.go.id', role: 'staf', status: 'aktif' });
+    const stafAgent = request.agent(app);
+    await stafAgent.post(`${API}/auth/login`).send({ identifier: 'staf-dasar@diskop-lebak.go.id', password: 'Password123' });
+
+    const base = {
+      nama: 'Bu Eni Warunggunung',
+      email: 'eni.warung@example.com',
+      namaUsaha: 'Dodol Eni',
+      kecamatan: 'Warunggunung',
+      kategoriUtama: 'olahan_pangan',
+      subKomoditas: 'Dodol',
+      nib: '1231231231231',
+      alamat: 'Kp. Warung Gunung RT 02',
+    };
+    const cek = (over) => stafAgent.post(`${API}/umkm/manual`).send({ ...base, noHp: '081234567890', ...over });
+
+    for (const [hp, pesan] of [
+      ['08123abc4567', 'angka'],
+      ['0812345', 'minimal 10'],
+      ['08123456789012345', 'maksimal 13'],
+      ['0212345678901', 'diawali 08'],
+    ]) {
+      const r = await cek({ noHp: hp });
+      assert.equal(r.status, 422, `HP ${hp}`);
+      assert.match(r.body.error.fields.noHp, new RegExp(pesan), `pesan HP ${hp}`);
+    }
+
+    const namaAngka = await cek({ nama: 'Eni 123' });
+    assert.equal(namaAngka.status, 422);
+    assert.ok(namaAngka.body.error.fields.nama);
+
+    // +62 dan spasi dinormalisasi menjadi 08...
+    const ok = await cek({ noHp: '+62 812-3456-7891' });
+    assert.equal(ok.status, 201);
+  });
+
+  it('Kebijakan kata sandi baru: huruf besar, kecil, angka, simbol, 8-64, tanpa spasi', async () => {
+    const lemah = [
+      ['Pendek1!', null], // valid panjang 8
+      ['password123!', 'huruf besar'],
+      ['PASSWORD123!', 'huruf kecil'],
+      ['Password!!!', 'angka'],
+      ['Password123', 'simbol'],
+      ['Pass word1!', 'spasi'],
+      [`Aa1!${'x'.repeat(65)}`, 'maksimal 64'],
+      ['Aa1!', 'minimal 8'],
+    ];
+    for (const [pw, pesan] of lemah) {
+      const res = await request(app)
+        .post(`${API}/auth/reset-password`)
+        .send({ token: 'x'.repeat(20), password: pw });
+      if (pesan === null) {
+        // lolos aturan kekuatan; gagal hanya karena token palsu
+        assert.equal(res.body.error.fields.password, undefined, pw);
+      } else {
+        assert.match(res.body.error.fields.password, new RegExp(pesan), pw);
+      }
+    }
   });
 });
